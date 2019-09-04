@@ -4,7 +4,75 @@ import 'package:http/http.dart';
 import 'package:flutter/services.dart';
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
 
-void main() => runApp(MyApp());
+//void main() => runApp(MyApp());
+
+
+bool get isInDebugMode {
+  bool inDebugMode = false;
+  assert(inDebugMode = false);
+  return inDebugMode;
+}
+
+/// Reports [error] along with its [stackTrace] to Sentry.io.
+Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
+  print('Caught error: $error');
+
+
+  // Errors thrown in development mode are unlikely to be interesting. You can
+  // check if you are running in dev mode using an assertion and omit sending
+  // the report.
+  /*
+  if (isInDebugMode) {
+    print(stackTrace);
+    print('In dev mode. Not sending report to AppDynamics.');
+    return;
+  }*/
+
+  print('Reporting to Appdynamics...');
+  AppdynamicsMobilesdk.reportError(error, stackTrace);
+/*
+  final SentryResponse response = await _sentry.captureException(
+    exception: error,
+    stackTrace: stackTrace,
+  );
+
+  if (response.isSuccessful) {
+    print('Success! Event ID: ${response.eventId}');
+  } else {
+    print('Failed to report to Sentry.io: ${response.error}');
+  }*/
+}
+
+Future<Null> main() async {
+  // This captures errors reported by the Flutter framework.
+  FlutterError.onError = (FlutterErrorDetails details) async {
+    if (isInDebugMode) {
+      // In development mode simply print to console.
+      FlutterError.dumpErrorToConsole(details);
+    } else {
+      // In production mode report to the application zone to report to
+      // Sentry.
+      Zone.current.handleUncaughtError(details.exception, details.stack);
+    }
+  };
+
+  // This creates a [Zone] that contains the Flutter application and stablishes
+  // an error handler that captures errors and reports them.
+  //
+  // Using a zone makes sure that as many errors as possible are captured,
+  // including those thrown from [Timer]s, microtasks, I/O, and those forwarded
+  // from the `FlutterError` handler.
+  //
+  // More about zones:
+  //
+  // - https://api.dartlang.org/stable/1.24.2/dart-async/Zone-class.html
+  // - https://www.dartlang.org/articles/libraries/zones
+  runZoned<Future<Null>>(() async {
+    runApp(new MyApp());
+  }, onError: (error, stackTrace) async {
+    await _reportError(error, stackTrace);
+  });
+}
 
 class MyApp extends StatefulWidget {
   @override
@@ -58,6 +126,7 @@ class _MyAppState extends State<MyApp> {
     Map<String, String> headers = response.headers;
     String contentType = headers['content-type'];
     String json = response.body;
+    throw Exception("This is a crash!");
 
     // TODO convert json to object...
 
@@ -79,6 +148,7 @@ class _MyAppState extends State<MyApp> {
           tooltip: 'Make Http Request',
           child: Icon(Icons.add),
         ),
+
       ),
     );
   }

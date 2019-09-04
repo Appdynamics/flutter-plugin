@@ -3,9 +3,9 @@ import 'package:http/http.dart';
 
 import 'package:flutter/services.dart';
 
-class AppdynamicsMobilesdk {
+class HttpRequestTracker {
   static const MethodChannel _channel =
-      const MethodChannel('appdynamics_mobilesdk');
+  const MethodChannel('appdynamics_mobilesdk.');
 
   static Future<String> get platformVersion async {
     final String version = await _channel.invokeMethod('getPlatformVersion');
@@ -22,9 +22,4 @@ class AppdynamicsMobilesdk {
   static Future<void> endRequest(int guid, Response response) async {
     await _channel.invokeMethod('httprequest.end',{ "guid": guid, "statusCode": response.statusCode});
   }
-
-  static Future<void> reportError(dynamic error, dynamic stackTrace) async {
-    await _channel.invokeMethod('reportError',{ "error": error.toString(), "stackTrace": stackTrace.toString()});
-  }
 }
-
