@@ -5,12 +5,12 @@ import 'package:flutter/services.dart';
 
 class AppdynamicsHttpRequestTracker {
 
-  int guid;
+  String guid;
   int responseCode;
   MethodChannel _channel;
 
 
-  AppdynamicsHttpRequestTracker(int guid, MethodChannel _channel) {
+  AppdynamicsHttpRequestTracker(String guid, MethodChannel _channel) {
     this.guid = guid;
     this._channel = _channel;
     this.responseCode = -1;
@@ -42,8 +42,8 @@ class AppdynamicsMobilesdk {
 
   static Future<AppdynamicsHttpRequestTracker> startRequest(String uri) async {
     //TODO, instead of a guid, can I create a tracker class?  that way it mimics the sdk.
-    final int guid = await _channel.invokeMethod('httprequest', { "uri": uri });
-    return new AppdynamicsHttpRequestTracker(guid, _channel)
+    final String guid = await _channel.invokeMethod('httprequest', { "uri": uri });
+    return new AppdynamicsHttpRequestTracker(guid, _channel);
   }
 
   static Future<int> takeScreenshot() async {
