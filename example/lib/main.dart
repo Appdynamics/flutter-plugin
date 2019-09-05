@@ -109,16 +109,20 @@ class _MyAppState extends State<MyApp> {
   }
 
   _makeGetRequest() async {
-    var uri = 'https://jsonplaceholder.typicode.com/posts';
+    var uri = 'http://10.0.2.2:5000/do';
 
     // AppDynamics specific request
-    int guid = await AppdynamicsMobilesdk.startRequest(uri);
+    AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
 
     // Request goes out
     Response response = await get(uri);
 
     // AppDynamics end request
-    AppdynamicsMobilesdk.endRequest(guid, response);
+    tracker.withResponseCode(response.statusCode).reportDone();
+
+    await AppdynamicsMobilesdk.takeScreenshot();
+
+    await AppdynamicsMobilesdk.setUserData("foo", "bar");
 
     //await agent.invokeMethod('httprequest.end',{ "statusCode": response.statusCode});
     // sample info available in response
@@ -126,7 +130,8 @@ class _MyAppState extends State<MyApp> {
     Map<String, String> headers = response.headers;
     String contentType = headers['content-type'];
     String json = response.body;
-    throw Exception("This is a crash!");
+    print(json);
+    // throw Exception("This is a crash!");
 
     // TODO convert json to object...
 
