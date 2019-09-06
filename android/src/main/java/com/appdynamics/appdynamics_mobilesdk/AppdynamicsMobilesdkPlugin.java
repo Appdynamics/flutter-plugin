@@ -7,6 +7,7 @@ import com.appdynamics.eumagent.runtime.ServerCorrelationHeaders;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.Map;
+import java.util.List;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -43,15 +44,24 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         Instrumentation.reportMetric(label, 1);
     } else if (call.method.equals("takeScreenshot")) {
         Instrumentation.takeScreenshot();
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-SCREENSHOT-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+        Log.d("AppD", "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-SCREENSHOT-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
         result.success(1);
+    } else if (call.method.equals("getCorrelationHeaders")) {
+        Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
+        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-HEADERS BEGIN-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+        for (Map.Entry<String,List<String>> entry : correlationHeaders.entrySet()) {
+            Log.d("AppD", entry.getKey());
+            List<String> list = entry.getValue();
+            for(String elem : list) {
+                Log.d("AppD", "--" + entry.getKey());
+            }
+        }
+        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-HEADERS END-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+
+        result.success(correlationHeaders);
     } else if (call.method.equals("httprequest")) {
       String uri = call.argument("uri");
-
-      // Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
-
       Log.d("AppD", "Send...");
-
       try {
         URL url = new URL(uri);
         String guid = UUID.randomUUID().toString();
@@ -63,17 +73,29 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
       }
     } else if(call.method.equals("httprequest.end")) {
 
-      int responseCode = (int)call.argument("responseCode");
-      String guid = call.argument("guid");
+        int responseCode = (int) call.argument("responseCode");
+        String guid = call.argument("guid");
 
-      HttpRequestTracker tracker = trackers.get(guid);
+        Map<String, List<String>> headerFields = (Map<String, List<String>>) call.argument("responseHeaderFields");
 
-      if(responseCode > -1) {
-          tracker.withResponseCode(responseCode);
-      }
+        HttpRequestTracker tracker = trackers.get(guid);
 
-      tracker.reportDone();
-      result.success(1);
+        if (responseCode > -1) {
+            tracker.withResponseCode(responseCode);
+        }
+
+        if (headerFields != null) {
+            tracker.withResponseHeaderFields(headerFields);
+        }
+
+        tracker.reportDone();
+        result.success(1);
+    } else if (call.method.equals("startTimer")) {
+        String label = call.argument("label");
+        Instrumentation.startTimer(label);
+    } else if (call.method.equals("stopTimer")) {
+        String label = call.argument("label");
+        Instrumentation.stopTimer(label);
     } else if (call.method.equals("reportError")) {
 
         String error = call.argument("error");

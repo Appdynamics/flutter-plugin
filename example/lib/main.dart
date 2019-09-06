@@ -81,6 +81,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  int _requestCounter = 0;
 
   @override
   void initState() {
@@ -108,32 +109,41 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  _makeGetRequest() async {
-    var uri = 'http://10.0.2.2:5000/do';
+  _makeHttpRequestButtonClicked() async {
+    AppdynamicsMobilesdk.startTimer("HTTP Requests");
+    await Future.wait([
+      _makeGetRequest('http://10.0.2.2:5000/do'),
+      _makeGetRequest('http://10.0.2.2:5000/domore'),
+      _makeGetRequest('http://10.0.2.2:5000/do'),
+      _makeGetRequest('http://10.0.2.2:5000/domoremore'),
+      _makeGetRequest('http://10.0.2.2:5000/404')
+    ]);
+    _requestCounter = _requestCounter + 1;
+    await AppdynamicsMobilesdk.takeScreenshot();
+    AppdynamicsMobilesdk.stopTimer("HTTP Requests");
+  }
+
+  Future<Response> _makeGetRequest(String uri) async {
 
     // AppDynamics specific request
     AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
+    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+
+    print(uri + "start");
 
     // Request goes out
-    Response response = await get(uri);
-
-    // AppDynamics end request
-    tracker.withResponseCode(response.statusCode).reportDone();
-
-    await AppdynamicsMobilesdk.takeScreenshot();
-
-    await AppdynamicsMobilesdk.setUserData("foo", "bar");
-
-    //await agent.invokeMethod('httprequest.end',{ "statusCode": response.statusCode});
-    // sample info available in response
-    int statusCode = response.statusCode;
-    Map<String, String> headers = response.headers;
-    String contentType = headers['content-type'];
-    String json = response.body;
-    print(json);
-    // throw Exception("This is a crash!");
-
-    // TODO convert json to object...
+    return get(uri, headers: correlationHeaders).then((response) {
+      tracker.withResponseCode(response.statusCode).withResponseHeaderFields(response.headers).reportDone();
+      int statusCode = response.statusCode;
+      Map<String, String> headers = response.headers;
+      String contentType = headers['content-type'];
+      String json = response.body;
+      print(uri + "end");
+      print("HERE COMES SOME DATA");
+      print(json);
+      print(headers);
+      return response;
+    });
 
   }
 
@@ -146,10 +156,10 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text('Running on: $_platformVersion $_requestCounter\n'),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _makeGetRequest,
+          onPressed: _makeHttpRequestButtonClicked,
           tooltip: 'Make Http Request',
           child: Icon(Icons.add),
         ),

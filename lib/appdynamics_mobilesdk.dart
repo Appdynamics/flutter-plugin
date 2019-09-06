@@ -8,12 +8,14 @@ class AppdynamicsHttpRequestTracker {
   String guid;
   int responseCode;
   MethodChannel _channel;
+  Map<String, List<String>> responseHeaderFields;
 
 
   AppdynamicsHttpRequestTracker(String guid, MethodChannel _channel) {
     this.guid = guid;
     this._channel = _channel;
     this.responseCode = -1;
+    print("Start HTTP" + this.guid);
   }
 
   AppdynamicsHttpRequestTracker withResponseCode(int code) {
@@ -21,10 +23,20 @@ class AppdynamicsHttpRequestTracker {
     return this;
   }
 
+  AppdynamicsHttpRequestTracker withResponseHeaderFields(Map<String, String> fields) {
+    this.responseHeaderFields = {};
+    fields.forEach((key, value) => {
+      this.responseHeaderFields[key] = [value]
+    });
+    return this;
+  }
+
   Future<void> reportDone() async {
+    print("Report Done" + this.guid);
     await this._channel.invokeMethod('httprequest.end', {
       "guid": this.guid,
-      "responseCode": this.responseCode
+      "responseCode": this.responseCode,
+      "responseHeaderFields": this.responseHeaderFields
     });
   }
 }
@@ -46,6 +58,15 @@ class AppdynamicsMobilesdk {
     return new AppdynamicsHttpRequestTracker(guid, _channel);
   }
 
+  static Future<Map<String, String>> getCorrelationHeaders() async {
+    final Map<dynamic, dynamic> r = await _channel.invokeMethod('getCorrelationHeaders');
+    Map<String, String> result = {};
+    r.forEach((key, value) => {
+      result[key] = value[0]
+    });
+    return result;
+  }
+
   static Future<int> takeScreenshot() async {
     final int guid = await _channel.invokeMethod('takeScreenshot');
     return guid;
@@ -62,6 +83,14 @@ class AppdynamicsMobilesdk {
 
   static Future<void> reportError(dynamic error, dynamic stackTrace) async {
     await _channel.invokeMethod('reportError',{ "error": error.toString(), "stackTrace": stackTrace.toString()});
+  }
+
+  static Future<void> startTimer(String label) async {
+    await _channel.invokeMethod('startTimer',{"label": label});
+  }
+
+  static Future<void> stopTimer(String label) async {
+    await _channel.invokeMethod('stopTimer',{"label": label});
   }
 }
 

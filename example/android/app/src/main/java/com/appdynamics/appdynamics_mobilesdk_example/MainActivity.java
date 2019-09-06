@@ -4,6 +4,7 @@ import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import com.appdynamics.eumagent.runtime.Instrumentation;
+import com.appdynamics.eumagent.runtime.InteractionCaptureMode;
 import com.appdynamics.eumagent.runtime.AgentConfiguration;
 import java.net.URL;
 import java.net.MalformedURLException;
@@ -30,6 +31,7 @@ public class MainActivity extends FlutterActivity {
     Instrumentation.start(AgentConfiguration.builder()
             .withAppKey(appkey)
             .withContext(getApplicationContext())
+            .withInteractionCaptureMode(InteractionCaptureMode.All)
             .withLoggingLevel(Instrumentation.LOGGING_LEVEL_VERBOSE)
             .build());
     GeneratedPluginRegistrant.registerWith(this);
