@@ -81,6 +81,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  int _counter = 0;
 
   @override
   void initState() {
@@ -104,14 +105,44 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     setState(() {
+      print(_counter);
       _platformVersion = platformVersion;
+      _counter++;
     });
   }
 
-  _makeGetRequest() async {
-    var uri = 'https://jsonplaceholder.typicode.com/posts';
+  _buttonPressed() async {
+    await Future.wait([
+      _makeGetRequest('https://jsonplaceholder.typicode.com/posts')
+    ]);
+    setState(() {
+      print(_counter);
+      _counter++;
+    });
+  }
 
+  Future<Response> _makeGetRequest(uri) async {
+    print('GET $uri');
     // AppDynamics specific request
+    AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
+    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+
+    print(uri + "start");
+
+    // Request goes out
+    return get(uri, headers: correlationHeaders).then((response) {
+      tracker.withResponseCode(response.statusCode).withResponseHeaderFields(response.headers).reportDone();
+      int statusCode = response.statusCode;
+      Map<String, String> headers = response.headers;
+      String contentType = headers['content-type'];
+      String json = response.body;
+      print(uri + "end");
+      print("HERE COMES SOME DATA");
+      print(json);
+      print(headers);
+      return response;
+    });
+    /*// AppDynamics specific request
     int guid = await AppdynamicsMobilesdk.startRequest(uri);
 
     // Request goes out
@@ -128,7 +159,7 @@ class _MyAppState extends State<MyApp> {
     String json = response.body;
     throw Exception("This is a crash!");
 
-    // TODO convert json to object...
+    // TODO convert json to object...*/
 
   }
 
@@ -141,10 +172,13 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Text(
+            '$_counter',
+            style: Theme.of(context).textTheme.display1,
+          ),
         ),
         floatingActionButton: FloatingActionButton(
-          onPressed: _makeGetRequest,
+          onPressed: _buttonPressed,
           tooltip: 'Make Http Request',
           child: Icon(Icons.add),
         ),
