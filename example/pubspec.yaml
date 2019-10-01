@@ -1,6 +1,7 @@
 name: appdynamics_mobilesdk_example
 description: Demonstrates how to use the appdynamics_mobilesdk plugin.
 publish_to: 'none'
+version: 0.0.1+0.0.1
 
 environment:
   sdk: ">=2.1.0 <3.0.0"
