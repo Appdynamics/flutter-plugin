@@ -91,13 +91,7 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    try {
-      platformVersion = await AppdynamicsMobilesdk.platformVersion;
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
+    String platformVersion = "unknown";
 
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
@@ -113,7 +107,8 @@ class _MyAppState extends State<MyApp> {
 
   _buttonPressed() async {
     await Future.wait([
-      _makeGetRequest('https://jsonplaceholder.typicode.com/posts')
+      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json')
+      // _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json')
     ]);
     setState(() {
       print(_counter);
@@ -125,21 +120,23 @@ class _MyAppState extends State<MyApp> {
     print('GET $uri');
     // AppDynamics specific request
     AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
-    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+    //Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
 
     print(uri + "start");
 
     // Request goes out
-    return get(uri, headers: correlationHeaders).then((response) {
-      tracker.withResponseCode(response.statusCode).withResponseHeaderFields(response.headers).reportDone();
-      int statusCode = response.statusCode;
+    return get(uri /*, headers: correlationHeaders*/).then((response) async {
+      //tracker.withResponseCode(response.statusCode).withResponseHeaderFields(response.headers).reportDone();
+      tracker.reportDone();
+      print(uri + "end");
+      /*int statusCode = response.statusCode;
       Map<String, String> headers = response.headers;
       String contentType = headers['content-type'];
       String json = response.body;
       print(uri + "end");
       print("HERE COMES SOME DATA");
       print(json);
-      print(headers);
+      print(headers);*/
       return response;
     });
     /*// AppDynamics specific request

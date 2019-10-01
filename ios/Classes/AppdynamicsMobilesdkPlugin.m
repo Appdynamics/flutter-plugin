@@ -51,6 +51,7 @@ typedef enum {
 - (void)reportDone:(NSString*)trackerId {
     ADEumHTTPRequestTracker *tracker = [[self trackers] objectForKey:trackerId];
     tracker.statusCode = [NSNumber numberWithInt:200];
+
     [tracker reportDone];
     [[self trackers] removeObjectForKey:trackerId];
 }
