@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.UUID;
 
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -24,10 +27,19 @@ import android.util.Log;
 public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
   private static Map<String, HttpRequestTracker> trackers = new HashMap<String, HttpRequestTracker>();
 
+  private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
+
   /** Plugin registration. */
   public static void registerWith(Registrar registrar) {
     final MethodChannel channel = new MethodChannel(registrar.messenger(), "appdynamics_mobilesdk");
     channel.setMethodCallHandler(new AppdynamicsMobilesdkPlugin());
+  }
+
+  public String startRequest(URL url) {
+    String trackerId = UUID.randomUUID().toString();
+    HttpRequestTracker tracker = Instrumentation.beginHttpRequest(url);
+    trackers.put(trackerId, tracker);
+    return trackerId;
   }
 
   @Override
@@ -38,21 +50,17 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         Instrumentation.takeScreenshot();
         break;
       case "startRequest":
-        String urlString = call.argument("url");
-        Log.d("AppD", "Send...");
         try {
-          URL url = new URL(urlString);
-          String trackerId = UUID.randomUUID().toString();
-          HttpRequestTracker tracker = Instrumentation.beginHttpRequest(url);
-          trackers.put(trackerId, tracker);
-          result.success(trackerId);
-        } catch (MalformedURLException e) {
+          URL url = new URL(call.argument("url").toString());
+          result.success(this.startRequest(url));
+        } catch(MalformedURLException e) {
           e.printStackTrace();
         }
         break;
       case "reportDone":
         int responseCode = (int) call.argument("responseCode");
         String trackerId = call.argument("trackerId");
+        String httpError = call.argument("error");
 
         Map<String, List<String>> headerFields = (Map<String, List<String>>) call.argument("responseHeaderFields");
 
@@ -60,6 +68,10 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
 
         if (responseCode > -1) {
             tracker.withResponseCode(responseCode);
+        }
+
+        if (httpError != null) {
+            tracker.withError(httpError);
         }
 
         if (headerFields != null) {
@@ -76,10 +88,14 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
           Instrumentation.setUserDataLong(call.argument("key").toString(), Long.parseLong(call.argument("value").toString()));
         break;
       case "setUserDataDouble":
-
+          Instrumentation.setUserDataDouble(call.argument("key").toString(), Double.parseDouble(call.argument("value").toString()));
         break;
       case "setUserDataDate":
-
+        try {
+          Instrumentation.setUserDataDate(call.argument("key").toString(), dateFormat.parse(call.argument("value").toString()));
+        } catch(ParseException e) {
+          e.printStackTrace();
+        }
         break;
       case "leaveBreadcrumb":
           Instrumentation.leaveBreadcrumb(call.argument("breadcrumb").toString(), Boolean.parseBoolean(call.argument("visibleInCrashesAndSessions").toString()) ? BreadcrumbVisibility.CRASHES_AND_SESSIONS : BreadcrumbVisibility.CRASHES_ONLY);

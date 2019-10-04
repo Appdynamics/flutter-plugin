@@ -27,9 +27,9 @@ Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
     print('In dev mode. Not sending report to AppDynamics.');
     return;
   }*/
-
+  print(stackTrace);
   print('Reporting to Appdynamics...');
-  AppdynamicsMobilesdk.reportError(error, stackTrace);
+  // AppdynamicsMobilesdk.reportError(error, stackTrace);
 /*
   final SentryResponse response = await _sentry.captureException(
     exception: error,
@@ -107,26 +107,42 @@ class _MyAppState extends State<MyApp> {
 
   _buttonPressed() async {
     await Future.wait([
-      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json')
-      // _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json')
+      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json'),
+      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json', 404)
     ]);
+
+    AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
+    AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
+    AppdynamicsMobilesdk.setUserDataDate("myDate", DateTime.now());
+
     setState(() {
       print(_counter);
       _counter++;
     });
   }
 
-  Future<Response> _makeGetRequest(uri) async {
+  Future<Response> _makeGetRequest(uri, [responseCode = -1]) async {
     print('GET $uri');
     // AppDynamics specific request
     AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
-    //Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders(false);
 
+    print(correlationHeaders);
     print(uri + "start");
 
     // Request goes out
-    return get(uri /*, headers: correlationHeaders*/).then((response) async {
-      //tracker.withResponseCode(response.statusCode).withResponseHeaderFields(response.headers).reportDone();
+    return get(uri, headers: correlationHeaders).then((response) async {
+
+      if(responseCode <= 0) {
+        responseCode = response.statusCode;
+      }
+
+      tracker.withResponseCode(responseCode).withResponseHeaderFields(response.headers);
+
+      if(responseCode > 500) {
+        tracker.withError('An error!!!');
+      }
+
       tracker.reportDone();
       print(uri + "end");
       /*int statusCode = response.statusCode;

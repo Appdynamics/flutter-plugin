@@ -48,9 +48,13 @@ typedef enum {
         [ADEumInstrumentation leaveBreadcrumb:breadcrumb mode:mode];
 }
 
-- (void)reportDone:(NSString*)trackerId {
+- (void)reportDone:(NSString*)trackerId responseCode:(int)responseCode {
     ADEumHTTPRequestTracker *tracker = [[self trackers] objectForKey:trackerId];
-    tracker.statusCode = [NSNumber numberWithInt:200];
+
+    if(responseCode > -1) {
+      NSLog(@"Setting response code");
+      tracker.statusCode = [NSNumber numberWithInt:responseCode];
+    }
 
     [tracker reportDone];
     [[self trackers] removeObjectForKey:trackerId];
@@ -68,7 +72,7 @@ typedef enum {
                 result([self startRequest: [[call arguments] objectForKey:@"url"]]);
                 break;
         case REPORT_DONE:
-                [self reportDone: [[call arguments] objectForKey:@"trackerId"]];
+                [self reportDone: [[call arguments] objectForKey:@"trackerId"] responseCode:[[[call arguments] objectForKey:@"responseCode"] intValue]];
                 break;
         case SET_USER_DATA:
                 [ADEumInstrumentation setUserData:[[call arguments] objectForKey:@"key"] value:[[call arguments] objectForKey:@"value"]];
