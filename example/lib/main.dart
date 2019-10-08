@@ -105,15 +105,29 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  _buttonPressed() async {
+  _removeButtonPressed() async {
+    throw Exception("This is a crash!");
+    setState(() {
+      print(_counter);
+      _counter--;
+    });
+  }
+
+  _addButtonPressed() async {
+    AppdynamicsMobilesdk.startTimer('Make Requests');
     await Future.wait([
       _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json'),
       _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json', 404)
     ]);
+    AppdynamicsMobilesdk.stopTimer('Make Requests');
 
     AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
     AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
     AppdynamicsMobilesdk.setUserDataDate("myDate", DateTime.now());
+    AppdynamicsMobilesdk.setUserDataBoolean("isRegistered", true);
+
+    AppdynamicsMobilesdk.takeScreenshot();
+
 
     setState(() {
       print(_counter);
@@ -126,6 +140,7 @@ class _MyAppState extends State<MyApp> {
     // AppDynamics specific request
     AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
     Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders(false);
+    print(await AppdynamicsMobilesdk.getCorrelationHeaders(true));
 
     print(correlationHeaders);
     print(uri + "start");
@@ -142,6 +157,8 @@ class _MyAppState extends State<MyApp> {
       if(responseCode > 500) {
         tracker.withError('An error!!!');
       }
+
+      print(response.headers);
 
       tracker.reportDone();
       print(uri + "end");
@@ -190,12 +207,21 @@ class _MyAppState extends State<MyApp> {
             style: Theme.of(context).textTheme.display1,
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: _buttonPressed,
-          tooltip: 'Make Http Request',
-          child: Icon(Icons.add),
-        ),
-
+        floatingActionButton: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+  mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+          FloatingActionButton(
+            onPressed: _addButtonPressed,
+            tooltip: 'Make Http Request',
+            child: Icon(Icons.add),
+          ),
+          FloatingActionButton(
+            onPressed: _removeButtonPressed,
+            tooltip: 'Make Error',
+            child: Icon(Icons.remove),
+            backgroundColor: Colors.red,
+        )]),
       ),
     );
   }

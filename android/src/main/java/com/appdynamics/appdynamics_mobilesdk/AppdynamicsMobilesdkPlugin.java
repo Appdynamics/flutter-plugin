@@ -87,6 +87,9 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
       case "setUserDataLong":
           Instrumentation.setUserDataLong(call.argument("key").toString(), Long.parseLong(call.argument("value").toString()));
         break;
+        case "setUserDataBoolean":
+            Instrumentation.setUserDataBoolean(call.argument("key").toString(), Boolean.parseBool(call.argument("value").toString()));
+          break;
       case "setUserDataDouble":
           Instrumentation.setUserDataDouble(call.argument("key").toString(), Double.parseDouble(call.argument("value").toString()));
         break;

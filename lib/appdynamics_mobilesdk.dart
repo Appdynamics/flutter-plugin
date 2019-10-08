@@ -72,7 +72,9 @@ class AppdynamicsMobilesdk {
 
   static Future<Map<dynamic, dynamic>> getCorrelationHeaders([bool valuesAsList = true]) async {
     final Map<dynamic, dynamic> r = await _channel.invokeMethod('getCorrelationHeaders');
-    if(valuesAsList) {
+    // valuesAsList is only relevant for Android, since iOS alwaays gives
+    // Map<String, String> maybe we should unify.
+    if(valuesAsList || r is Map<String, String>) {
       return r;
     }
     Map<String, String> result = {};
@@ -93,6 +95,10 @@ class AppdynamicsMobilesdk {
 
   static Future<void> setUserDataLong(String key, int value) async {
     await _channel.invokeMethod('setUserDataLong', {"key": key, "value": value});
+  }
+
+  static Future<void> setUserDataBoolean(String key, bool value) async {
+    await _channel.invokeMethod('setUserDataBoolean', {"key": key, "value": value});
   }
 
   static Future<void> setUserDataDouble(String key, double value) async {
