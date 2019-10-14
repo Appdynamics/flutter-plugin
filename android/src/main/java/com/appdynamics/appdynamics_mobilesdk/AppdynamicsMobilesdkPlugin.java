@@ -10,6 +10,7 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.UUID;
 
 import java.text.SimpleDateFormat;
@@ -62,7 +63,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         String trackerId = call.argument("trackerId");
         String httpError = call.argument("error");
 
-        Map<String, List<String>> headerFields = (Map<String, List<String>>) call.argument("responseHeaderFields");
+        Map<String, String> headerFields = (Map<String, String>) call.argument("responseHeaderFields");
 
         HttpRequestTracker tracker = trackers.get(trackerId);
 
@@ -75,7 +76,13 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         }
 
         if (headerFields != null) {
-            tracker.withResponseHeaderFields(headerFields);
+            Map<String, List<String>> finalMap = new HashMap<String, List<String>>();
+            for(Map.Entry<String, String> entry : headerFields.entrySet()) {
+              List<String> list = new LinkedList<String>();
+              list.add(entry.getValue());
+              finalMap.put(entry.getKey(), list);
+            }
+            tracker.withResponseHeaderFields(finalMap);
         }
 
         tracker.reportDone();
@@ -88,7 +95,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
           Instrumentation.setUserDataLong(call.argument("key").toString(), Long.parseLong(call.argument("value").toString()));
         break;
         case "setUserDataBoolean":
-            Instrumentation.setUserDataBoolean(call.argument("key").toString(), Boolean.parseBool(call.argument("value").toString()));
+            Instrumentation.setUserDataBoolean(call.argument("key").toString(), Boolean.parseBoolean(call.argument("value").toString()));
           break;
       case "setUserDataDouble":
           Instrumentation.setUserDataDouble(call.argument("key").toString(), Double.parseDouble(call.argument("value").toString()));
@@ -105,13 +112,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         break;
       case "getCorrelationHeaders":
         Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
-        for (Map.Entry<String,List<String>> entry : correlationHeaders.entrySet()) {
-            Log.d("AppD", entry.getKey());
-            List<String> list = entry.getValue();
-            for(String elem : list) {
-                Log.d("AppD", "--" + entry.getKey());
-            }
-        }
         result.success(correlationHeaders);
         break;
       case "startTimer":

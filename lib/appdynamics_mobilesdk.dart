@@ -11,7 +11,7 @@ class AppdynamicsHttpRequestTracker {
   Exception exception;
   int responseCode;
   MethodChannel _channel;
-  Map<String, List<String>> responseHeaderFields;
+  Map<String, String> responseHeaderFields;
 
 
   AppdynamicsHttpRequestTracker(String trackerId, MethodChannel _channel) {
@@ -35,15 +35,8 @@ class AppdynamicsHttpRequestTracker {
     return this;
   }
 
-  AppdynamicsHttpRequestTracker withResponseHeaderFields(Map<dynamic, dynamic> fields) {
-    if(fields is Map<String, String>) {
-      this.responseHeaderFields = {};
-      fields.forEach((key, value) => {
-        this.responseHeaderFields[key] = [value]
-      });
-    } else {
-      this.responseHeaderFields = fields;
-    }
+  AppdynamicsHttpRequestTracker withResponseHeaderFields(Map<String, String> fields) {
+    this.responseHeaderFields = fields;
     return this;
   }
 
@@ -70,11 +63,9 @@ class AppdynamicsMobilesdk {
     return new AppdynamicsHttpRequestTracker(trackerId, _channel);
   }
 
-  static Future<Map<dynamic, dynamic>> getCorrelationHeaders([bool valuesAsList = true]) async {
+  static Future<Map<String, String>> getCorrelationHeaders([bool valuesAsList = true]) async {
     final Map<dynamic, dynamic> r = await _channel.invokeMethod('getCorrelationHeaders');
-    // valuesAsList is only relevant for Android, since iOS alwaays gives
-    // Map<String, String> maybe we should unify.
-    if(valuesAsList || r is Map<String, String>) {
+    if(r is Map<String, String>) {
       return r;
     }
     Map<String, String> result = {};
