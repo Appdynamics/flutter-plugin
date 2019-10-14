@@ -4,6 +4,34 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/services.dart';
 
+class AppdynamicsSessionFrame {
+  String sessionId;
+  String name;
+  MethodChannel _channel;
+
+  AppdynamicsSessionFrame(String sessionId, String name, MethodChannel _channel) {
+    this.sessionId = sessionId;
+    this.name = name;
+    this._channel = _channel;
+  }
+
+  Future<AppdynamicsSessionFrame> updateName(String name) async {
+    this.name = name;
+    await this._channel.invokeMethod('updateSessionFrame', {
+      "sessionId": this.sessionId,
+      "name": this.name
+    });
+    return this;
+  }
+
+  Future<AppdynamicsSessionFrame> end() async {
+    await this._channel.invokeMethod('endSessionFrame', {
+      "sessionId": this.sessionId
+    });
+    return this;
+  }
+}
+
 class AppdynamicsHttpRequestTracker {
 
   String trackerId;
@@ -63,14 +91,19 @@ class AppdynamicsMobilesdk {
     return new AppdynamicsHttpRequestTracker(trackerId, _channel);
   }
 
+  static Future<AppdynamicsSessionFrame> startSessionFrame(String name) async {
+    final String sessionId = await _channel.invokeMethod('startSessionFrame', { "name": name });
+    return new AppdynamicsSessionFrame(sessionId, name, _channel);
+  }
+
   static Future<Map<String, String>> getCorrelationHeaders([bool valuesAsList = true]) async {
-    final Map<dynamic, dynamic> r = await _channel.invokeMethod('getCorrelationHeaders');
+    Map r = await _channel.invokeMethod('getCorrelationHeaders');
     if(r is Map<String, String>) {
       return r;
     }
     Map<String, String> result = {};
-    r.forEach((key, value) => {
-      result[key] = value[0]
+    r.forEach((k,v) => {
+      result[k] = v.toString()
     });
     return result;
   }

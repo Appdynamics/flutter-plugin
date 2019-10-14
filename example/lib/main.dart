@@ -4,56 +4,18 @@ import 'package:http/http.dart';
 import 'package:flutter/services.dart';
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
 
-//void main() => runApp(MyApp());
-
-
-bool get isInDebugMode {
-  bool inDebugMode = false;
-  assert(inDebugMode = false);
-  return inDebugMode;
-}
-
 /// Reports [error] along with its [stackTrace] to Sentry.io.
 Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');
-
-
-  // Errors thrown in development mode are unlikely to be interesting. You can
-  // check if you are running in dev mode using an assertion and omit sending
-  // the report.
-  /*
-  if (isInDebugMode) {
-    print(stackTrace);
-    print('In dev mode. Not sending report to AppDynamics.');
-    return;
-  }*/
   print(stackTrace);
   print('Reporting to Appdynamics...');
-  // AppdynamicsMobilesdk.reportError(error, stackTrace);
-/*
-  final SentryResponse response = await _sentry.captureException(
-    exception: error,
-    stackTrace: stackTrace,
-  );
-
-  if (response.isSuccessful) {
-    print('Success! Event ID: ${response.eventId}');
-  } else {
-    print('Failed to report to Sentry.io: ${response.error}');
-  }*/
+  AppdynamicsMobilesdk.reportError(error, stackTrace);
 }
 
 Future<Null> main() async {
   // This captures errors reported by the Flutter framework.
   FlutterError.onError = (FlutterErrorDetails details) async {
-    if (isInDebugMode) {
-      // In development mode simply print to console.
-      FlutterError.dumpErrorToConsole(details);
-    } else {
-      // In production mode report to the application zone to report to
-      // Sentry.
-      Zone.current.handleUncaughtError(details.exception, details.stack);
-    }
+    Zone.current.handleUncaughtError(details.exception, details.stack);
   };
 
   // This creates a [Zone] that contains the Flutter application and stablishes
@@ -105,8 +67,16 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  _crashMe() async {
+    var x = () {
+      var y = () => throw Exception("This is a crash!");
+      y();
+    };
+    x();
+  }
+
   _removeButtonPressed() async {
-    throw Exception("This is a crash!");
+    _crashMe();
     setState(() {
       print(_counter);
       _counter--;
@@ -115,11 +85,18 @@ class _MyAppState extends State<MyApp> {
 
   _addButtonPressed() async {
     AppdynamicsMobilesdk.startTimer('Make Requests');
+
+    AppdynamicsSessionFrame frame = await AppdynamicsMobilesdk.startSessionFrame('Making Requests');
+
     await Future.wait([
-      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json'),
-      _makeGetRequest('https://raw.githubusercontent.com/bahamas10/css-color-names/master/css-color-names.json', 404)
+      _makeGetRequest('http://apmgame-apmgame-yjkxilr6.srv.ravcloud.com:3000/checkout'),
+      _makeGetRequest('http://apmgame-apmgame-yjkxilr6.srv.ravcloud.com:3000/checkout', 404)
     ]);
     AppdynamicsMobilesdk.stopTimer('Make Requests');
+
+    frame.updateName('Requests Done!');
+
+    frame.end();
 
     AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
     AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
@@ -139,8 +116,7 @@ class _MyAppState extends State<MyApp> {
     print('GET $uri');
     // AppDynamics specific request
     AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
-    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders(false);
-    print(await AppdynamicsMobilesdk.getCorrelationHeaders(true));
+    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
 
     print(correlationHeaders);
     print(uri + "start");
@@ -158,7 +134,7 @@ class _MyAppState extends State<MyApp> {
         tracker.withError('An error!!!');
       }
 
-      print(response.headers);
+      print("Response Headers: " + response.headers.toString());
 
       tracker.reportDone();
       print(uri + "end");

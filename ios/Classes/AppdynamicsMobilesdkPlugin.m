@@ -1,4 +1,5 @@
 #import <ADEUMInstrumentation/ADEumHTTPRequestTracker.h>
+#import <ADEUMInstrumentation/ADEumSessionFrame.h>
 #import <ADEUMInstrumentation/ADEumServerCorrelationHeaders.h>
 #import <ADEUMInstrumentation/ADEumInstrumentation_interfaces.h>
 #import "AppdynamicsMobilesdkPlugin.h"
@@ -16,18 +17,23 @@ typedef enum {
         GET_CORRELATION_HEADERS,
         START_TIMER,
         STOP_TIMER,
-        REPORT_ERROR
+        REPORT_ERROR,
+        START_SESSION_FRAME,
+        UPDATE_SESSION_FRAME,
+        END_SESSION_FRAME
 } InstrumentationMethod;
 
 @implementation AppdynamicsMobilesdkPlugin
 
 @synthesize trackers;
+@synthesize sessionFrames;
 
 - (id)init {
         self = [super init];
 
         if (self) {
                 self.trackers = [[NSMutableDictionary alloc] init];
+                self.sessionFrames = [[NSMutableDictionary alloc] init];
         }
 
         return self;
@@ -49,6 +55,24 @@ typedef enum {
         return trackerId;
 }
 
+- (NSString*)startSessionFrame:(NSString*)name {
+        NSString *sessionId = [[NSUUID UUID] UUIDString];
+        ADEumSessionFrame* sessionFrame = [ADEumInstrumentation startSessionFrame:name];
+        [[self sessionFrames] setObject:sessionFrame forKey:sessionId];
+        return sessionId;
+}
+
+- (void)updateSessionFrame:(NSString*)sessionId name:(NSString*)name {
+        ADEumSessionFrame* sessionFrame = [[self sessionFrames] objectForKey:sessionId];
+        [sessionFrame updateName:name];
+}
+
+- (void)endSessionFrame:(NSString*)sessionId {
+        ADEumSessionFrame* sessionFrame = [[self sessionFrames] objectForKey:sessionId];
+        [sessionFrame end];
+        [[self sessionFrames] removeObjectForKey:sessionId];
+}
+
 - (void)leaveBreadcrumb:(NSString*)breadcrumb visibleInCrashesAndSessions:(bool)visibleInCrashesAndSessions {
         ADEumBreadcrumbVisibility mode = visibleInCrashesAndSessions ? ADEumBreadcrumbVisibilityCrashesAndSessions : ADEumBreadcrumbVisibilityCrashesOnly;
         [ADEumInstrumentation leaveBreadcrumb:breadcrumb mode:mode];
@@ -61,20 +85,33 @@ typedef enum {
         [ADEumInstrumentation setUserDataDate:key value:date];
 }
 
-- (void)reportError:(NSString*)errorString {
+- (void)reportError:(NSString*)errorString stackTrace:(NSString*)stackTrace {
         NSString* domain = @"com.errordomain";
-        NSString* reason = errorString;
-        NSError* error = [NSError errorWithDomain:domain code:500 userInfo:@{@"Error reason": reason}];
+
+        NSDictionary *userInfo = @{
+                NSLocalizedDescriptionKey: NSLocalizedString(errorString, nil),
+                NSLocalizedFailureReasonErrorKey: NSLocalizedString(stackTrace, nil),
+        };
+
+        NSError* error = [NSError errorWithDomain:domain code:500 userInfo:userInfo];
         NSLog(@"%@",error);
-        [ADEumInstrumentation reportError:error withSeverity: ADEumErrorSeverityLevelCritical];
+        [ADEumInstrumentation reportError:error withSeverity: ADEumErrorSeverityLevelCritical andStackTrace:NO];
 }
 
-- (void)reportDone:(NSString*)trackerId responseCode:(int)responseCode {
+- (void)reportDone:(NSString*)trackerId responseCode:(int)responseCode responseHeaderFields:(NSDictionary *)responseHeaderFields {
         ADEumHTTPRequestTracker *tracker = [[self trackers] objectForKey:trackerId];
 
         if(responseCode > -1) {
                 NSLog(@"Setting response code");
                 tracker.statusCode = [NSNumber numberWithInt:responseCode];
+        }
+        NSLog(@"header fields:");
+        NSLog(@"%@", responseHeaderFields);
+
+        if(responseHeaderFields != nil) {
+                NSLog(@"With header fields");
+                NSLog(@"%@", responseHeaderFields);
+                tracker.allHeaderFields = responseHeaderFields;
         }
 
         [tracker reportDone];
@@ -95,7 +132,10 @@ typedef enum {
                 @"getCorrelationHeaders",
                 @"startTimer",
                 @"stopTimer",
-                @"reportError"
+                @"reportError",
+                @"startSessionFrame",
+                @"updateSessionFrame",
+                @"endSessionFrame"
         ];
         int item = [items indexOfObject:call.method];
 
@@ -107,7 +147,7 @@ typedef enum {
                 result([self startRequest: [[call arguments] objectForKey:@"url"]]);
                 break;
         case REPORT_DONE:
-                [self reportDone: [[call arguments] objectForKey:@"trackerId"] responseCode:[[[call arguments] objectForKey:@"responseCode"] intValue]];
+                [self reportDone: [[call arguments] objectForKey:@"trackerId"] responseCode:[[[call arguments] objectForKey:@"responseCode"] intValue] responseHeaderFields:[[call arguments] objectForKey:@"responseHeaderFields"]];
                 break;
         case SET_USER_DATA:
                 [ADEumInstrumentation setUserData:[[call arguments] objectForKey:@"key"] value:[[call arguments] objectForKey:@"value"]];
@@ -116,10 +156,10 @@ typedef enum {
                 [ADEumInstrumentation setUserDataLong:[[call arguments] objectForKey:@"key"] value:[[[call arguments] objectForKey:@"value"] longLongValue]];
                 break;
         case SET_USER_DATA_BOOLEAN:
-                [ADEumInstrumentation setUserDataLong:[[call arguments] objectForKey:@"key"] value:[[[call arguments] objectForKey:@"value"] boolValue]];
+                [ADEumInstrumentation setUserDataBoolean:[[call arguments] objectForKey:@"key"] value:[[[call arguments] objectForKey:@"value"] boolValue]];
                 break;
         case SET_USER_DATA_DOUBLE:
-                [ADEumInstrumentation setUserDataLong:[[call arguments] objectForKey:@"key"] value:[[[call arguments] objectForKey:@"value"] doubleValue]];
+                [ADEumInstrumentation setUserDataDouble:[[call arguments] objectForKey:@"key"] value:[[[call arguments] objectForKey:@"value"] doubleValue]];
                 break;
         case SET_USER_DATA_DATE:
                 [self setUserDataDate: [[call arguments] objectForKey:@"key"] value:[[call arguments] objectForKey:@"value"]];
@@ -137,9 +177,19 @@ typedef enum {
                 [ADEumInstrumentation stopTimerWithName:[[call arguments] objectForKey:@"label"]];
                 break;
         case REPORT_ERROR:
-                [self reportError: [[call arguments] objectForKey:@"error"]];
+                [self reportError: [[call arguments] objectForKey:@"error"] stackTrace:[[call arguments] objectForKey:@"stackTrace"]];
+                break;
+        case START_SESSION_FRAME:
+                result([self startSessionFrame: [[call arguments] objectForKey:@"name"]]);
+                break;
+        case UPDATE_SESSION_FRAME:
+                [self updateSessionFrame: [[call arguments] objectForKey:@"sessionId"] name:[[call arguments] objectForKey:@"name"]];
+                break;
+        case END_SESSION_FRAME:
+                [self endSessionFrame: [[call arguments] objectForKey:@"sessionId"]];
                 break;
         default:
+                result(FlutterMethodNotImplemented);
                 break;
         }
 }

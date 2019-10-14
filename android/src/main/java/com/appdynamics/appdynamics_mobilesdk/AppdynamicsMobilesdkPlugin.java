@@ -2,6 +2,7 @@ package com.appdynamics.appdynamics_mobilesdk;
 
 import com.appdynamics.eumagent.runtime.Instrumentation;
 import com.appdynamics.eumagent.runtime.HttpRequestTracker;
+import com.appdynamics.eumagent.runtime.SessionFrame;
 import com.appdynamics.eumagent.runtime.ErrorSeverityLevel;
 import com.appdynamics.eumagent.runtime.ServerCorrelationHeaders;
 import com.appdynamics.eumagent.runtime.BreadcrumbVisibility;
@@ -10,7 +11,7 @@ import java.net.MalformedURLException;
 import java.util.Map;
 import java.util.List;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import java.text.SimpleDateFormat;
@@ -27,6 +28,7 @@ import android.util.Log;
 /** AppdynamicsMobilesdkPlugin */
 public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
   private static Map<String, HttpRequestTracker> trackers = new HashMap<String, HttpRequestTracker>();
+  private static Map<String, SessionFrame> sessionFrames = new HashMap<String, SessionFrame>();
 
   private static SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS");
 
@@ -41,6 +43,24 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
     HttpRequestTracker tracker = Instrumentation.beginHttpRequest(url);
     trackers.put(trackerId, tracker);
     return trackerId;
+  }
+
+  public String startSessionFrame(String name) {
+    String sessionId = UUID.randomUUID().toString();
+    SessionFrame sessionFrame = Instrumentation.startSessionFrame(name);
+    sessionFrames.put(sessionId, sessionFrame);
+    return sessionId;
+  }
+
+  public void updateSessionFrame(String sessionId, String newName) {
+    SessionFrame sessionFrame = sessionFrames.get(sessionId);
+    sessionFrame.updateName(newName);
+  }
+
+  public void endSessionFrame(String sessionId) {
+    SessionFrame sessionFrame = sessionFrames.get(sessionId);
+    sessionFrame.end();
+    sessionFrames.remove(sessionId);
   }
 
   @Override
@@ -78,7 +98,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         if (headerFields != null) {
             Map<String, List<String>> finalMap = new HashMap<String, List<String>>();
             for(Map.Entry<String, String> entry : headerFields.entrySet()) {
-              List<String> list = new LinkedList<String>();
+              List<String> list = new ArrayList<String>();
               list.add(entry.getValue());
               finalMap.put(entry.getKey(), list);
             }
@@ -86,6 +106,9 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         }
 
         tracker.reportDone();
+
+        trackers.remove(trackerId);
+
         result.success(1);
         break;
       case "setUserData":
@@ -112,7 +135,11 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         break;
       case "getCorrelationHeaders":
         Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
-        result.success(correlationHeaders);
+        Map<String, String> finalMap = new HashMap<String, String>();
+        for(Map.Entry<String, List<String>> entry : correlationHeaders.entrySet()) {
+          finalMap.put(entry.getKey(), entry.getValue().get(0));
+        }
+        result.success(finalMap);
         break;
       case "startTimer":
           Instrumentation.startTimer(call.argument("label").toString());
@@ -124,11 +151,12 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         String stackTrace = call.argument("stackTrace");
         String[] tracelines = stackTrace.split("\\r?\\n");
         Exception ex = new Exception(error);
-        StackTraceElement[] trace = new StackTraceElement[tracelines.length];
+        //StackTraceElement[] trace = new StackTraceElement[tracelines.length];
+        List<StackTraceElement> trace = new ArrayList<StackTraceElement>();
 
         for(int i = 0; i < tracelines.length; i ++) {
           String line = tracelines[i];
-          Log.d("AppD-line",line);
+          //Log.d("AppD-line",line);
           //#0      _MyAppState._makeGetRequest (package:appdynamics_mobilesdk_example/main.dart:129:5)(test:1)
           //dart:async/zone.dart:1029:19
 
@@ -136,135 +164,50 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
 
           //stacknumber-0 methodname-1 fileinfo&lineinfo-2;
           String[] parts = spacesanitized.split("\\(");
-          String fileinfo = parts[1].replaceAll("(\\(|\\))", "");
-          Log.d("fileinfo", fileinfo);
-          String[] filesparts = fileinfo.split(":");
-          int linenumber = filesparts.length == 4 ? Integer.parseInt(filesparts[2]) : 0;
-          //  StackTraceElement(declaringClass, methodName, fileName, linenumber)
-          trace[i] = new StackTraceElement("flutter",parts[0].substring(3, parts[0].length()-1),fileinfo,linenumber);
+          if(parts.length > 1) {
+            String fileinfo = parts[1].replaceAll("(\\(|\\))", "");
+            // Log.d("fileinfo", fileinfo);
+            String[] filesparts = fileinfo.split(":");
+            String methodName = parts[0].substring(3, parts[0].length()-1).trim();
+            String declaringClass = "Flutter.NoClass";
+            if(methodName.lastIndexOf('.') > -1) {
+              declaringClass = "Flutter." + methodName.substring(0,methodName.lastIndexOf('.'));
+              methodName = methodName.substring(methodName.lastIndexOf('.')+1);
+            }
+            int linenumber = 0;
+            if(filesparts.length == 4) {
+              linenumber = Integer.parseInt(filesparts[2]);
+              fileinfo = filesparts[1];
+            }
+            //  StackTraceElement(declaringClass, methodName, fileName, linenumber)
+            Log.d("AppD", declaringClass);
+            Log.d("AppD", methodName);
+            Log.d("AppD", fileinfo);
+            Log.d("AppD", String.valueOf(linenumber));
+            trace.add(new StackTraceElement(declaringClass, methodName, fileinfo, linenumber));
+          }
         }
 
         Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
         Log.d("AppD",error);
         Log.d("AppD",stackTrace);
 
-         {
-
-        };
-        ex.setStackTrace(trace);
+        ex.setStackTrace(trace.toArray(new StackTraceElement[0]));
+        Log.d("Appd", ex.toString());
+        ex.printStackTrace();
         Instrumentation.reportError(ex, ErrorSeverityLevel.CRITICAL);
+        break;
+      case "startSessionFrame":
+        result.success(this.startSessionFrame(call.argument("name").toString()));
+        break;
+      case "updateSessionFrame":
+        this.updateSessionFrame(call.argument("sessionId").toString(), call.argument("name").toString());
+        break;
+      case "endSessionFrame":
+        this.endSessionFrame(call.argument("sessionId").toString());
         break;
       default:
         result.notImplemented();
     }
   }
-
-  /*public void onMethodCallOld(MethodCall call, Result result) {
-    Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-    if (call.method.equals("getPlatformVersion")) {
-        result.success("Android " + android.os.Build.VERSION.RELEASE);
-    } else if (call.method.equals("setUserData")) {
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-USER DATA-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        String label = call.argument("label");
-        String value = call.argument("value");
-        Log.d("AppD", label);
-        Log.d("AppD", value);
-        Instrumentation.setUserData(label, value);
-        Instrumentation.reportMetric(label, 1);
-    } else if (call.method.equals("takeScreenshot")) {
-        Instrumentation.takeScreenshot();
-        Log.d("AppD", "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-SCREENSHOT-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        result.success(1);
-    } else if (call.method.equals("getCorrelationHeaders")) {
-        Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-HEADERS BEGIN-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        for (Map.Entry<String,List<String>> entry : correlationHeaders.entrySet()) {
-            Log.d("AppD", entry.getKey());
-            List<String> list = entry.getValue();
-            for(String elem : list) {
-                Log.d("AppD", "--" + entry.getKey());
-            }
-        }
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-HEADERS END-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-
-        result.success(correlationHeaders);
-    } else if (call.method.equals("httprequest")) {
-      String uri = call.argument("uri");
-      Log.d("AppD", "Send...");
-      try {
-        URL url = new URL(uri);
-        String guid = UUID.randomUUID().toString();
-        HttpRequestTracker tracker = Instrumentation.beginHttpRequest(url);
-        trackers.put(guid, tracker);
-        result.success(guid);
-      } catch (MalformedURLException e) {
-        e.printStackTrace();
-      }
-    } else if(call.method.equals("httprequest.end")) {
-
-        int responseCode = (int) call.argument("responseCode");
-        String guid = call.argument("guid");
-
-        Map<String, List<String>> headerFields = (Map<String, List<String>>) call.argument("responseHeaderFields");
-
-        HttpRequestTracker tracker = trackers.get(guid);
-
-        if (responseCode > -1) {
-            tracker.withResponseCode(responseCode);
-        }
-
-        if (headerFields != null) {
-            tracker.withResponseHeaderFields(headerFields);
-        }
-
-        tracker.reportDone();
-        result.success(1);
-    } else if (call.method.equals("startTimer")) {
-        String label = call.argument("label");
-        Instrumentation.startTimer(label);
-    } else if (call.method.equals("stopTimer")) {
-        String label = call.argument("label");
-        Instrumentation.stopTimer(label);
-    } else if (call.method.equals("reportError")) {
-
-        String error = call.argument("error");
-        String stackTrace = call.argument("stackTrace");
-        String[] tracelines = stackTrace.split("\\r?\\n");
-        Exception ex = new Exception(error);
-        StackTraceElement[] trace = new StackTraceElement[tracelines.length];
-
-        for(int i = 0; i < tracelines.length; i ++) {
-          String line = tracelines[i];
-          Log.d("AppD-line",line);
-          //#0      _MyAppState._makeGetRequest (package:appdynamics_mobilesdk_example/main.dart:129:5)(test:1)
-          //dart:async/zone.dart:1029:19
-
-          String spacesanitized = line.trim().replaceAll("\\s{2,}", " ");
-
-          //stacknumber-0 methodname-1 fileinfo&lineinfo-2;
-          String[] parts = spacesanitized.split("\\(");
-          String fileinfo = parts[1].replaceAll("(\\(|\\))", "");
-          Log.d("fileinfo", fileinfo);
-          String[] filesparts = fileinfo.split(":");
-          int linenumber = filesparts.length == 4 ? Integer.parseInt(filesparts[2]) : 0;
-          //  StackTraceElement(declaringClass, methodName, fileName, linenumber)
-          trace[i] = new StackTraceElement("flutter",parts[0].substring(3, parts[0].length()-1),fileinfo,linenumber);
-        }
-
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        Log.d("AppD",error);
-        Log.d("AppD",stackTrace);
-
-         {
-
-        };
-        ex.setStackTrace(trace);
-        Instrumentation.reportError(ex, ErrorSeverityLevel.CRITICAL);
-
-
-    }  else {
-      result.notImplemented();
-    }
-  }*/
-
 }

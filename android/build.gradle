@@ -9,7 +9,7 @@ buildscript {
 
     dependencies {
         classpath 'com.android.tools.build:gradle:3.2.1'
-        classpath 'com.appdynamics:appdynamics-gradle-plugin:4.5.+' // this line added for AppDynamics
+        classpath 'com.appdynamics:appdynamics-gradle-plugin:5.+' // this line added for AppDynamics
     }
 }
 
@@ -35,6 +35,5 @@ android {
     }
 }
 dependencies {
-    implementation 'com.appdynamics:appdynamics-runtime:4.+' // this line added for AppDynamics
+    implementation 'com.appdynamics:appdynamics-runtime:5.+' // this line added for AppDynamics
 }
-
