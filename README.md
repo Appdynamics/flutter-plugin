@@ -4,6 +4,11 @@ Flutter plugin to utilize the AppDynamics SDK.
 
 ## Getting Started
 
+You can use the example app to try out how your instrumentation might look like. Copy `android/app/src/main/assets/config.sample.properties` to `android/app/src/main/assets/config.properties` and set your application key for android. For iOS do the same with `ios/Runner/AppDynamics.sample.plist`.
+Run `flutter run` in the example folder to spin up the app on your emulator or devices.
+
+## Installation
+
 To instrument your flutter based mobile application with AppDynamics MRUM, download the latest version via git:
 
 ```shell
@@ -19,7 +24,7 @@ dependencies:
     path: /path/to/flutter-plugin
 ```
 
-Afterwards follow the additional steps to add the android and iOS agent to both platforms.
+Follow the additional steps to add the android and iOS agent to both platforms.
 
 ### Android configuration
 
@@ -113,3 +118,5 @@ This is like you would instrument any other iOS application. If you use AppDynam
 If necessary follow the official documentation to [customize the instrumentation](https://docs.appdynamics.com/display/PRO45/Customize+the+iOS+Instrumentation).
 
 Your iOS application is now instrumented and you should see data appear in the AppDynamics controller.
+
+# Usage

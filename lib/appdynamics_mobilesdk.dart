@@ -1,8 +1,31 @@
 import 'dart:async';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
 import 'package:flutter/services.dart';
+
+class AppdynamicsHttpClient extends http.BaseClient{
+  final http.Client _httpClient;
+
+  AppdynamicsHttpClient(this._httpClient);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+	AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(request.url.toString());
+	print(request.url);
+	return _httpClient.send(request).then((response) {
+		print(response.statusCode);
+		print(response.headers);
+		tracker.withResponseCode(response.statusCode);
+		tracker.withResponseHeaderFields(response.headers);
+		return response;
+	}, onError: (error) {
+		print(error);
+	}).whenComplete(() {
+    		tracker.reportDone();
+    	});
+  }
+}
 
 class AppdynamicsSessionFrame {
   String sessionId;
