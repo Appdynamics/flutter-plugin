@@ -1,6 +1,6 @@
 # AppDynamics Flutter Plugin
 
-Flutter plugin to utilize the AppDynamics SDK.
+Flutter plugin to utilize the AppDynamics SDK.  This plugin is a field integration and thus not an officially licensed AppDynamics product. This plugin wraps the AppDynanmics SDK and requires AppDynamics Mobile Licenses. Any issues with the plugin itself should be created on this repo.
 
 ## Quick Start
 
