@@ -4,7 +4,6 @@ import 'package:http/http.dart';
 import 'package:flutter/services.dart';
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
 
-/// Reports [error] along with its [stackTrace] to Sentry.io.
 Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');
   print(stackTrace);
@@ -13,22 +12,9 @@ Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
 }
 
 Future<Null> main() async {
-  // This captures errors reported by the Flutter framework.
   FlutterError.onError = (FlutterErrorDetails details) async {
     Zone.current.handleUncaughtError(details.exception, details.stack);
   };
-
-  // This creates a [Zone] that contains the Flutter application and stablishes
-  // an error handler that captures errors and reports them.
-  //
-  // Using a zone makes sure that as many errors as possible are captured,
-  // including those thrown from [Timer]s, microtasks, I/O, and those forwarded
-  // from the `FlutterError` handler.
-  //
-  // More about zones:
-  //
-  // - https://api.dartlang.org/stable/1.24.2/dart-async/Zone-class.html
-  // - https://www.dartlang.org/articles/libraries/zones
   runZoned<Future<Null>>(() async {
     runApp(new MyApp());
   }, onError: (error, stackTrace) async {

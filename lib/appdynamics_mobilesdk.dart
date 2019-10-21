@@ -4,6 +4,60 @@ import 'package:intl/intl.dart';
 
 import 'package:flutter/services.dart';
 
+import 'package:flutter/widgets.dart';
+
+class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
+
+  AppdynamicsSessionFrame _currentFrame;
+  String _currentName;
+
+  void _updateSessionFrame(Route<dynamic> route) async {
+    print('Updating Session Frame');
+    print(route.currentResult);
+    print(route.runtimeType);
+    final String name = route.settings.name;
+    // No name could be extracted, skip.
+    if(name == null) {
+      return;
+    }
+    print('-- Name ${name}');
+    // Name was not updated, skip.
+    if(_currentName != null && name == _currentName) {
+      return;
+    }
+    if(_currentFrame != null) {
+      _currentFrame.end();
+    }
+    _currentName = name;
+    _currentFrame = await AppdynamicsMobilesdk.startSessionFrame(name);
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+    super.didPush(route, previousRoute);
+    _updateSessionFrame(route);
+  }
+
+  @override
+  void didReplace({Route<dynamic> newRoute, Route<dynamic> oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    _updateSessionFrame(newRoute);
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+    super.didRemove(route, previousRoute);
+    _updateSessionFrame(previousRoute);
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+    super.didPop(route, previousRoute);
+    _updateSessionFrame(previousRoute);
+  }
+}
+
+
 class AppdynamicsHttpClient extends http.BaseClient{
   final http.Client _httpClient;
 
@@ -11,19 +65,16 @@ class AppdynamicsHttpClient extends http.BaseClient{
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-	AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(request.url.toString());
-	print(request.url);
-	return _httpClient.send(request).then((response) {
-		print(response.statusCode);
-		print(response.headers);
-		tracker.withResponseCode(response.statusCode);
-		tracker.withResponseHeaderFields(response.headers);
-		return response;
-	}, onError: (error) {
-		print(error);
-	}).whenComplete(() {
-    		tracker.reportDone();
-    	});
+    AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(request.url.toString());
+    return _httpClient.send(request).then((response) {
+      tracker.withResponseCode(response.statusCode);
+      tracker.withResponseHeaderFields(response.headers);
+      return response;
+    }, onError: (error) {
+      print(error);
+    }).whenComplete(() {
+      tracker.reportDone();
+    });
   }
 }
 

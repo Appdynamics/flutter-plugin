@@ -1,11 +1,15 @@
-# appdynamics_mobilesdk
+# AppDynamics Flutter Plugin
 
 Flutter plugin to utilize the AppDynamics SDK.
 
-## Getting Started
+## Quick Start
 
-You can use the example app to try out how your instrumentation might look like. Copy `android/app/src/main/assets/config.sample.properties` to `android/app/src/main/assets/config.properties` and set your application key for android. For iOS do the same with `ios/Runner/AppDynamics.sample.plist`.
-Run `flutter run` in the example folder to spin up the app on your emulator or devices.
+You can use the example app, which is part of this repository, to try out how your instrumentation might look like:
+
+* Clone this repository: `git clone https://github.com/Appdynamics/flutter-plugin`
+* Copy `android/app/src/main/assets/config.sample.properties` to `android/app/src/main/assets/config.properties` and set your application key for android.
+* For iOS do the same with `ios/Runner/AppDynamics.sample.plist`.
+* Run `flutter run` in the example folder to spin up the app on your emulator or devices.
 
 ## Installation
 
@@ -24,7 +28,7 @@ dependencies:
     path: /path/to/flutter-plugin
 ```
 
-Follow the additional steps to add the android and iOS agent to both platforms.
+Follow the additional steps below to add the AppDynamics agent to iOS and android platform.
 
 ### Android configuration
 
@@ -53,7 +57,7 @@ apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 Next, verify that the required permissions in your `AndroidManifest.xml` are set:
 
-```
+```xml
 <uses-permission android:name="android.permission.INTERNET"></uses-permission>
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 ```
@@ -120,3 +124,127 @@ If necessary follow the official documentation to [customize the instrumentation
 Your iOS application is now instrumented and you should see data appear in the AppDynamics controller.
 
 # Usage
+
+Out of the box the AppDynamics agent will deliver some information like session count, screenshots (iOS only), etc. To enrich your instrumentation you can leverage the API that comes with this plugin. This API tries to be as close as possible to the [iOS](https://docs.appdynamics.com/display/PRO45/Customize+the+iOS+Instrumentation) and [android](https://docs.appdynamics.com/display/PRO45/Customize+the+Android+Instrumentation) APIs:
+
+## Collect Additional Types of Data
+
+As with the iOS and android agent you can use additional methods to extend the insturmentation. To use those functionalities import the appdynamics_mobilesdk.dart:
+
+```dart
+import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
+```
+
+### Custom Timers
+
+Start and end a custom timer at any place of your code.
+
+```dart
+AppdynamicsMobilesdk.startTimer('Timer Name');
+...
+AppdynamicsMobilesdk.stopTimer('Timer Name');
+``
+
+### User Data
+
+Report user data, that will be attached to sessions and network requests. Use different methods depending on the type of the data:
+
+```dart
+AppdynamicsMobilesdk.setUserData("username", username);
+AppdynamicsMobilesdk.setUserDataLong("counter", counter);
+AppdynamicsMobilesdk.setUserDataDouble("cartValue", cartValue.toDouble());
+AppdynamicsMobilesdk.setUserDataDate("loginTime", DateTime.now());
+AppdynamicsMobilesdk.setUserDataBoolean("isRegistered", true);
+```
+
+## Report Errors and Exceptions
+
+You can capture and send errors & exceptions to AppDynamics with the following:
+
+```dart
+Future<Null> main() async {
+  FlutterError.onError = (FlutterErrorDetails details) async {
+    Zone.current.handleUncaughtError(details.exception, details.stack);
+  };
+  runZoned<Future<Null>>(() async {
+    runApp(new MyApp());
+  }, onError: (error, stackTrace) async {
+    await AppdynamicsMobilesdk.reportError(error, stackTrace);
+  });
+}
+```
+
+Note, that for iOS there will be only limited information (no stacktrace!)
+
+## Start and End Session Frames
+
+You can use the SessionFrame API to create session frames that will appear in the session activity:
+
+```dart
+AppdynamicsSessionFrame frame = await AppdynamicsMobilesdk.startSessionFrame('Checkout');
+...
+frame.updateName('Checkout (Failed)');
+...
+frame.end();
+```
+
+If your application uses route aware navigation you can add the class `AppdynamicsRouteObserver` to your widgets' `navigatorObservers`. For example, if you use `MaterialApp` (or `CupertinoApp` or any other `WidgetsApp`):
+
+```dart
+@override
+Widget build(BuildContext context) {
+  return MaterialApp(
+    home: const MainPage(),
+    title: 'My App',
+    navigatorObservers: [AppdynamicsRouteObserver()]
+  );
+}
+```
+
+## Track Network Requests
+
+To detect network requests, add a tracker to your requests and report them when the request is completed:
+
+```dart
+AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
+return get(uri).then((response) async {
+  tracker.withResponseCode(response.statusCode);
+  tracker.withResponseHeaderFields(response.headers);
+  tracker.reportDone();
+  return response;
+});
+```
+
+If you use AppDynamics also in your backend application, you can add correlation headers:
+
+```dart
+AppdynamicsHttpRequestTracker tracker = await
+
+Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+
+AppdynamicsMobilesdk.startRequest(uri);
+return get(uri, headers: correlationHeaders).then((response) async {
+  tracker.withResponseCode(response.statusCode);
+  tracker.withResponseHeaderFields(response.headers);
+  tracker.reportDone();
+  return response;
+});
+```
+
+Note, that this example uses the dart [http](https://pub.dev/packages/http) package, but of course you can add this code to any other custom HTTP library.
+
+For the dart http package mentioned above you can leverage the wrapper class `AppdynamicsHttpClient` to add the tracker to each request:
+
+```dart
+final client = AppdynamicsHttpClient(http.Client());
+```
+
+## Take Screenshots
+
+If enabled as controller setting, you can take manual screenshots:
+
+```dart
+AppdynamicsMobilesdk.takeScreenshot();
+```
+
+Please note, that this only works for iOS and android will give you a black screen.
