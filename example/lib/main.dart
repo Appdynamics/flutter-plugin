@@ -116,7 +116,7 @@ class _MyAppState extends State<MyApp> {
 
     if(startTimer != false) {
       print('Start Timer');
-      AppdynamicsMobilesdk.startTimer(current["startTimer"]);
+      await AppdynamicsMobilesdk.startTimer(current["startTimer"]);
     }
 
     if(stopTimer != false) {
@@ -137,7 +137,7 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    AppdynamicsMobilesdk.takeScreenshot();
+    await AppdynamicsMobilesdk.takeScreenshot();
 
     /*AppdynamicsMobilesdk.setUserData("counter_long", _counter);
     AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);

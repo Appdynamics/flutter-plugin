@@ -69,6 +69,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
     switch(call.method) {
       case "takeScreenshot":
         Instrumentation.takeScreenshot();
+        result.success(1);
         break;
       case "startRequest":
         try {
@@ -76,6 +77,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
           result.success(this.startRequest(url));
         } catch(MalformedURLException e) {
           e.printStackTrace();
+          result.success(1);
         }
         break;
       case "reportDone":
@@ -112,16 +114,20 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         result.success(1);
         break;
       case "setUserData":
-          Instrumentation.setUserData(call.argument("key").toString(), call.argument("value").toString());
+        Instrumentation.setUserData(call.argument("key").toString(), call.argument("value").toString());
+        result.success(1);
         break;
       case "setUserDataLong":
-          Instrumentation.setUserDataLong(call.argument("key").toString(), Long.parseLong(call.argument("value").toString()));
+        Instrumentation.setUserDataLong(call.argument("key").toString(), Long.parseLong(call.argument("value").toString()));
+        result.success(1);
         break;
-        case "setUserDataBoolean":
-            Instrumentation.setUserDataBoolean(call.argument("key").toString(), Boolean.parseBoolean(call.argument("value").toString()));
+      case "setUserDataBoolean":
+          Instrumentation.setUserDataBoolean(call.argument("key").toString(), Boolean.parseBoolean(call.argument("value").toString()));
+          result.success(1);
           break;
       case "setUserDataDouble":
-          Instrumentation.setUserDataDouble(call.argument("key").toString(), Double.parseDouble(call.argument("value").toString()));
+        Instrumentation.setUserDataDouble(call.argument("key").toString(), Double.parseDouble(call.argument("value").toString()));
+        result.success(1);
         break;
       case "setUserDataDate":
         try {
@@ -129,9 +135,11 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         } catch(ParseException e) {
           e.printStackTrace();
         }
+        result.success(1);
         break;
       case "leaveBreadcrumb":
-          Instrumentation.leaveBreadcrumb(call.argument("breadcrumb").toString(), Boolean.parseBoolean(call.argument("visibleInCrashesAndSessions").toString()) ? BreadcrumbVisibility.CRASHES_AND_SESSIONS : BreadcrumbVisibility.CRASHES_ONLY);
+        Instrumentation.leaveBreadcrumb(call.argument("breadcrumb").toString(), Boolean.parseBoolean(call.argument("visibleInCrashesAndSessions").toString()) ? BreadcrumbVisibility.CRASHES_AND_SESSIONS : BreadcrumbVisibility.CRASHES_ONLY);
+        result.success(1);
         break;
       case "getCorrelationHeaders":
         Map<String,List<String>> correlationHeaders = ServerCorrelationHeaders.generate();
@@ -143,8 +151,11 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         break;
       case "startTimer":
           Instrumentation.startTimer(call.argument("label").toString());
+          result.success(1);
+          break;
       case "stopTimer":
           Instrumentation.stopTimer(call.argument("label").toString());
+          result.success(1);
           break;
       case "reportError":
         String error = call.argument("error");
@@ -196,18 +207,22 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         Log.d("Appd", ex.toString());
         ex.printStackTrace();
         Instrumentation.reportError(ex, ErrorSeverityLevel.CRITICAL);
+        result.success(1);
         break;
       case "startSessionFrame":
         result.success(this.startSessionFrame(call.argument("name").toString()));
         break;
       case "updateSessionFrame":
         this.updateSessionFrame(call.argument("sessionId").toString(), call.argument("name").toString());
+        result.success(1);
         break;
       case "endSessionFrame":
         this.endSessionFrame(call.argument("sessionId").toString());
+        result.success(1);
         break;
       case "startNextSession":
         Instrumentation.startNextSession();
+        result.success(1);
         break;
       default:
         result.notImplemented();

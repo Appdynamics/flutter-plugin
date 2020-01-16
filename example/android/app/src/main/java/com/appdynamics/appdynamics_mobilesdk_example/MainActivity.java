@@ -4,6 +4,7 @@ import android.os.Bundle;
 import io.flutter.app.FlutterActivity;
 import io.flutter.plugins.GeneratedPluginRegistrant;
 import com.appdynamics.eumagent.runtime.Instrumentation;
+import com.appdynamics.eumagent.runtime.AgentConfiguration;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.io.InputStream;
@@ -25,7 +26,13 @@ public class MainActivity extends FlutterActivity {
       is.close();
     } catch (Exception e) {
     }
-    Instrumentation.start(appkey, getApplicationContext());
+    Instrumentation.start(AgentConfiguration.builder()
+      .withAppKey(appkey)
+      .withContext(getApplicationContext())
+      .withCollectorURL("https://fra-col.eum-appdynamics.com")
+      .withScreenshotURL("https://fra-image.eum-appdynamics.com")
+      .build()
+    );
     GeneratedPluginRegistrant.registerWith(this);
   }
 }
