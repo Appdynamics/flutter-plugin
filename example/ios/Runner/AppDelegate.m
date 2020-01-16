@@ -8,6 +8,8 @@
     NSString *path = [[NSBundle mainBundle] pathForResource:@"AppDynamics" ofType:@"plist"];
     NSDictionary *settings = [[NSDictionary alloc] initWithContentsOfFile:path];
     ADEumAgentConfiguration *config = [[ADEumAgentConfiguration alloc] initWithAppKey: [settings valueForKey:@"AppKey"]];
+    config.collectorURL = @"https://fra-col.eum-appdynamics.com";
+    config.screenshotURL = @"https://fra-image.eum-appdynamics.com";
     config.loggingLevel = ADEumLoggingLevelAll;
     [ADEumInstrumentation initWithConfiguration:config];
     // Override point for customization after application launch.

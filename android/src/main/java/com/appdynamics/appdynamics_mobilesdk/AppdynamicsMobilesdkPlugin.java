@@ -206,6 +206,9 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
       case "endSessionFrame":
         this.endSessionFrame(call.argument("sessionId").toString());
         break;
+      case "startNextSession":
+        Instrumentation.startNextSession();
+        break;
       default:
         result.notImplemented();
     }

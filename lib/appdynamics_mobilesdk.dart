@@ -1,10 +1,9 @@
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-
 import 'package:flutter/services.dart';
-
 import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 
 class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
 
@@ -13,12 +12,21 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
 
   void _updateSessionFrame(Route<dynamic> route) async {
     print('Updating Session Frame');
-    print(route.currentResult);
-    print(route.runtimeType);
-    final String name = route.settings.name;
+    String name = route.settings.name;
     // No name could be extracted, skip.
     if(name == null) {
-      return;
+      // Try to infer a name from the widget builder
+      if(route is MaterialPageRoute<dynamic>) {
+        String builderType = route.builder.runtimeType.toString();
+        if(builderType.startsWith('(BuildContext) =>')) {
+          String returnType = builderType.split('=>')[1].trim();
+          if(returnType != 'Widget') {
+            name = returnType;
+          }
+        }
+      } else {
+        return;
+      }
     }
     print('-- Name ${name}');
     // Name was not updated, skip.
@@ -182,9 +190,8 @@ class AppdynamicsMobilesdk {
     return result;
   }
 
-  static Future<int> takeScreenshot() async {
-    final int guid = await _channel.invokeMethod('takeScreenshot');
-    return guid;
+  static Future<void> takeScreenshot() async {
+    await _channel.invokeMethod('takeScreenshot');
   }
 
   static Future<void> setUserData(String key, String value) async {
@@ -218,5 +225,13 @@ class AppdynamicsMobilesdk {
 
   static Future<void> stopTimer(String label) async {
     await _channel.invokeMethod('stopTimer',{"label": label});
+  }
+
+  static Future<void> startNextSession() async {
+    await _channel.invokeMethod('startNextSession');
+  }
+
+  static Future<void> leaveBreadcrumb(breadcrumb, visibleInCrashesAndSessions) async {
+    await _channel.invokeMethod('leaveBreadcrumb', { "breadcrumb": breadcrumb, "visibleInCrashesAndSessions": visibleInCrashesAndSessions});
   }
 }

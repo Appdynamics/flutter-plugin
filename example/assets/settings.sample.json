@@ -1,0 +1,17 @@
+{
+  "frames": [
+    {
+      "name": "Login",
+      "image": "https://example.com/login.png"
+    },
+    {
+      "name": "My Account",
+      "image": "https://example.com/account.png",
+      "breadcrumb": "Change Password"
+    },
+    {
+      "name": "Logout",
+      "image": "https://example.com/logout.png"
+    }
+  ]
+}
