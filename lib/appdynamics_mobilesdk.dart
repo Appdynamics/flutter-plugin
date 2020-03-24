@@ -12,7 +12,7 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
 
   void _updateSessionFrame(Route<dynamic> route) async {
     print('Updating Session Frame');
-    String name = route.settings.name;
+    String name = ''; // route.name;//settings.name;
     // No name could be extracted, skip.
     if(name == null) {
       // Try to infer a name from the widget builder
@@ -116,7 +116,7 @@ class AppdynamicsSessionFrame {
 
 class AppdynamicsHttpRequestTracker {
 
-  String trackerId;
+  Future<String> trackerId;
   String error;
   Exception exception;
   int responseCode;
@@ -124,8 +124,8 @@ class AppdynamicsHttpRequestTracker {
   Map<String, String> responseHeaderFields;
 
 
-  AppdynamicsHttpRequestTracker(String trackerId, MethodChannel _channel) {
-    this.trackerId = trackerId;
+  AppdynamicsHttpRequestTracker(String url, MethodChannel _channel) {
+    this.trackerId = _channel.invokeMethod('startRequest', { "url": url });
     this._channel = _channel;
     this.responseCode = -1;
   }
@@ -151,8 +151,9 @@ class AppdynamicsHttpRequestTracker {
   }
 
   Future<void> reportDone() async {
+    String trackerId = await this.trackerId;
     await this._channel.invokeMethod('reportDone', {
-      "trackerId": this.trackerId,
+      "trackerId": trackerId,
       "responseCode": this.responseCode,
       "responseHeaderFields": this.responseHeaderFields,
       "error": this.error,
@@ -167,10 +168,8 @@ class AppdynamicsMobilesdk {
   static const MethodChannel _channel =
       const MethodChannel('appdynamics_mobilesdk');
 
-  static Future<AppdynamicsHttpRequestTracker> startRequest(String url) async {
-    //TODO, instead of a guid, can I create a tracker class?  that way it mimics the sdk.
-    final String trackerId = await _channel.invokeMethod('startRequest', { "url": url });
-    return new AppdynamicsHttpRequestTracker(trackerId, _channel);
+  static AppdynamicsHttpRequestTracker startRequest(String url) {
+    return new AppdynamicsHttpRequestTracker(url, _channel);
   }
 
   static Future<AppdynamicsSessionFrame> startSessionFrame(String name) async {
@@ -228,10 +227,15 @@ class AppdynamicsMobilesdk {
   }
 
   static Future<void> startNextSession() async {
+    print('######### STARTING NEW SESSION #########');
     await _channel.invokeMethod('startNextSession');
   }
 
   static Future<void> leaveBreadcrumb(breadcrumb, visibleInCrashesAndSessions) async {
     await _channel.invokeMethod('leaveBreadcrumb', { "breadcrumb": breadcrumb, "visibleInCrashesAndSessions": visibleInCrashesAndSessions});
+  }
+
+  static Future<void> reportMetric(String name, int value) async {
+    await _channel.invokeMethod('reportMetric', {"name": name, "value": value});
   }
 }

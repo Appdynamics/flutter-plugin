@@ -21,7 +21,8 @@ typedef enum {
         START_SESSION_FRAME,
         UPDATE_SESSION_FRAME,
         END_SESSION_FRAME,
-        START_NEXT_SESSION
+        START_NEXT_SESSION,
+        REPORT_METRIC
 } InstrumentationMethod;
 
 @implementation AppdynamicsMobilesdkPlugin
@@ -137,7 +138,8 @@ typedef enum {
                 @"startSessionFrame",
                 @"updateSessionFrame",
                 @"endSessionFrame",
-                @"startNextSession"
+                @"startNextSession",
+                @"reportMetric"
         ];
         int item = [items indexOfObject:call.method];
 
@@ -204,7 +206,12 @@ typedef enum {
                 result(@"success");
                 break;
         case START_NEXT_SESSION:
+                NSLog(@"-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
                 [ADEumInstrumentation startNextSession];
+                result(@"success");
+                break;
+        case REPORT_METRIC:
+                [ADEumInstrumentation reportMetricWithName:[[call arguments] objectForKey:@"name"] value:[[[call arguments] objectForKey:@"value"] longLongValue]];
                 result(@"success");
                 break;
         default:

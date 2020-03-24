@@ -10,6 +10,7 @@
     ADEumAgentConfiguration *config = [[ADEumAgentConfiguration alloc] initWithAppKey: [settings valueForKey:@"AppKey"]];
     config.collectorURL = @"https://fra-col.eum-appdynamics.com";
     config.screenshotURL = @"https://fra-image.eum-appdynamics.com";
+    config.interactionCaptureMode = ADEumInteractionCaptureModeAll;
     config.loggingLevel = ADEumLoggingLevelAll;
     [ADEumInstrumentation initWithConfiguration:config];
     // Override point for customization after application launch.

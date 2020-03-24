@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'package:http/http.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
@@ -40,16 +41,12 @@ class _MyAppState extends State<MyApp> {
     {
       "name": "Login",
       "image": "",
-      "urls": [
-          "http://www.appdynamics.com/"
-      ]
+      "urls": ["http://www.appdynamics.com/"]
     },
     {
       "name": "Logut",
       "image": "",
-      "urls": [
-          "http://www.appdynamics.com/"
-      ]
+      "urls": ["http://www.appdynamics.com/"]
     }
   ];
 
@@ -64,17 +61,17 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
-
-
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
     if (!mounted) return;
 
+    var settings =
+        json.decode(await rootBundle.loadString('assets/settings.json'));
 
-    var settings = json.decode(await rootBundle.loadString('assets/settings.json'));
-
-    if(settings.containsKey("frames")) { frames = settings["frames"]; }
+    if (settings.containsKey("frames")) {
+      frames = settings["frames"];
+    }
 
     frame = await AppdynamicsMobilesdk.startSessionFrame("App Start");
 
@@ -88,7 +85,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   _clock() async {
-    while(true) {
+    while (true) {
       await _next();
       await new Future.delayed(const Duration(seconds: 10));
       print("Next after 10 seconds");
@@ -96,25 +93,39 @@ class _MyAppState extends State<MyApp> {
   }
 
   _next() async {
-    frame.end();
+    await frame.end();
 
     var current = frames[frameCounter % frames.length];
 
     var frameName = current["name"];
     var image = current["image"];
 
-    var breadCrumb = current.containsKey("breadcrumb") ? current["breadcrumb"] : false;
-    var startTimer = current.containsKey("startTimer") ? current["startTimer"] : false;
-    var stopTimer = current.containsKey("stopTimer") ? current["stopTimer"] : false;
+    setState(() {
+      _frameName = frameName;
+      _image = image;
+    });
+
+    var rng = new Random();
+
+    var breadCrumb =
+        current.containsKey("breadcrumb") ? current["breadcrumb"] : false;
+    var startTimer =
+        current.containsKey("startTimer") ? current["startTimer"] : false;
+    var stopTimer =
+        current.containsKey("stopTimer") ? current["stopTimer"] : false;
     var urls = current.containsKey("urls") ? current["urls"] : false;
 
-    if(frameCounter >= frames.length) {
+    if (frameCounter >= frames.length) {
       print('Starting a new session after ' + frameName);
       await AppdynamicsMobilesdk.startNextSession();
       frameCounter = 0;
+      _counter++;
     }
 
-    if(startTimer != false) {
+    print('===== FRAME: ' + frameName + '======');
+    frame = await AppdynamicsMobilesdk.startSessionFrame(frameName);
+
+    /*if(startTimer != false) {
       print('Start Timer');
       await AppdynamicsMobilesdk.startTimer(current["startTimer"]);
     }
@@ -122,35 +133,46 @@ class _MyAppState extends State<MyApp> {
     if(stopTimer != false) {
       print('Stop Timer');
       await AppdynamicsMobilesdk.stopTimer(current["stopTimer"]);
-    }
+      await new Future.delayed(const Duration(seconds: 10));
+    }*/
 
-    if(breadCrumb != false) {
+    if (breadCrumb != false) {
       await AppdynamicsMobilesdk.leaveBreadcrumb(breadCrumb, true);
+      if (rng.nextInt(100) > 50) {
+        _crashMe();
+      }
     }
 
-    print(frameName);
-    frame = await AppdynamicsMobilesdk.startSessionFrame(frameName);
-
-    if(urls != false) {
-      for(var i = 0; i < urls.length; i++){
+    if (urls != false) {
+      for (var i = 0; i < urls.length; i++) {
         await _makeGetRequest(urls[i]);
       }
     }
 
+    await new Future.delayed(const Duration(seconds: 2));
+
     await AppdynamicsMobilesdk.takeScreenshot();
 
-    /*AppdynamicsMobilesdk.setUserData("counter_long", _counter);
-    AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
-    AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
-    AppdynamicsMobilesdk.setUserDataDate("myDate", DateTime.now());
-    AppdynamicsMobilesdk.setUserDataBoolean("isRegistered", true);*/
+    if (rng.nextInt(100) > 50) {
+      await AppdynamicsMobilesdk.setUserData("language", "de_DE");
+      await AppdynamicsMobilesdk.setUserData(
+          "userId", "833ED2BF-FAA4-4660-A58F-4BA1C9C953D5");
+      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", true);
+    } else {
+      await AppdynamicsMobilesdk.setUserData("language", "fi_FI");
+      await AppdynamicsMobilesdk.setUserData(
+          "userId", "CCBF8FE3-20C3-48F6-822B-4FC69916B1A1");
+      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", false);
+    }
+
+    //AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
+    //AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
+    //AppdynamicsMobilesdk.setUserDataDate("myDate", DateTime.now());
+    //AppdynamicsMobilesdk.setUserDataBoolean("isRegistered", true);
+
+    await AppdynamicsMobilesdk.reportMetric('frameCounter', frameCounter);
 
     frameCounter++;
-
-    setState(() {
-      _frameName = frameName;
-      _image = image;
-    });
   }
 
   _crashMe() async {
@@ -166,7 +188,6 @@ class _MyAppState extends State<MyApp> {
   _removeButtonPressed() async {
     _crashMe();
     setState(() {
-      print(_counter);
       _counter--;
     });
   }
@@ -178,7 +199,7 @@ class _MyAppState extends State<MyApp> {
   Future<Response> _makeGetRequest(uri, [responseCode = -1]) async {
     print('GET $uri');
     // AppDynamics specific request
-    AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(uri);
+    AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(uri);
     Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
 
     print("CH BEGIN");
@@ -188,8 +209,7 @@ class _MyAppState extends State<MyApp> {
 
     // Request goes out
     return get(uri, headers: correlationHeaders).then((response) async {
-
-      if(responseCode <= 0) {
+      if (responseCode <= 0) {
         responseCode = response.statusCode;
       }
 
@@ -201,9 +221,11 @@ class _MyAppState extends State<MyApp> {
 
       print(response.headers);
       */
-      tracker.withResponseCode(responseCode).withResponseHeaderFields(response.headers);
+      tracker
+          .withResponseCode(responseCode)
+          .withResponseHeaderFields(response.headers);
 
-      if(responseCode > 500) {
+      if (responseCode > 500) {
         tracker.withError('An error!!!');
       }
 
@@ -211,17 +233,12 @@ class _MyAppState extends State<MyApp> {
       print(uri + " end");
       return response;
     });
-
   }
-
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: Text('$_frameName'),
-        ),
         body: Center(
           child: Image.network(
             '$_image',
@@ -232,20 +249,21 @@ class _MyAppState extends State<MyApp> {
           ),
         ),
         floatingActionButton: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-  mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-          FloatingActionButton(
-            onPressed: _addButtonPressed,
-            tooltip: 'Refresh',
-            child: Icon(Icons.autorenew),
-          ),
-          FloatingActionButton(
-            onPressed: _removeButtonPressed,
-            tooltip: 'Cancel',
-            child: Icon(Icons.cancel),
-            backgroundColor: Colors.red,
-        )]),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              FloatingActionButton(
+                onPressed: _addButtonPressed,
+                tooltip: 'Refresh',
+                child: Icon(Icons.autorenew),
+              ),
+              FloatingActionButton(
+                onPressed: _removeButtonPressed,
+                tooltip: 'Cancel',
+                child: Icon(Icons.cancel),
+                backgroundColor: Colors.red,
+              )
+            ]),
       ),
     );
   }

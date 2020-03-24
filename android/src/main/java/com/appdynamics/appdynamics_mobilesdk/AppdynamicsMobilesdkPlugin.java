@@ -221,7 +221,12 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         result.success(1);
         break;
       case "startNextSession":
+      Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
         Instrumentation.startNextSession();
+        result.success(1);
+        break;
+      case "reportMetric":
+        Instrumentation.reportMetric(call.argument("name").toString(), Long.parseLong(call.argument("value").toString()));
         result.success(1);
         break;
       default:
