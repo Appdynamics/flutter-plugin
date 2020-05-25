@@ -11,7 +11,6 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
   String _currentName;
 
   void _updateSessionFrame(Route<dynamic> route) async {
-    print('Updating Session Frame');
     String name = ''; // route.name;//settings.name;
     // No name could be extracted, skip.
     if(name == null) {
@@ -28,7 +27,6 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
         return;
       }
     }
-    print('-- Name ${name}');
     // Name was not updated, skip.
     if(_currentName != null && name == _currentName) {
       return;
@@ -79,7 +77,7 @@ class AppdynamicsHttpClient extends http.BaseClient{
       tracker.withResponseHeaderFields(response.headers);
       return response;
     }, onError: (error) {
-      print(error);
+      print("error");
     }).whenComplete(() {
       tracker.reportDone();
     });
@@ -227,7 +225,6 @@ class AppdynamicsMobilesdk {
   }
 
   static Future<void> startNextSession() async {
-    print('######### STARTING NEW SESSION #########');
     await _channel.invokeMethod('startNextSession');
   }
 

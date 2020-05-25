@@ -96,7 +96,6 @@ typedef enum {
         };
 
         NSError* error = [NSError errorWithDomain:domain code:500 userInfo:userInfo];
-        NSLog(@"%@",error);
         [ADEumInstrumentation reportError:error withSeverity: ADEumErrorSeverityLevelCritical andStackTrace:YES];
 }
 
@@ -104,15 +103,10 @@ typedef enum {
         ADEumHTTPRequestTracker *tracker = [[self trackers] objectForKey:trackerId];
 
         if(responseCode > -1) {
-                NSLog(@"Setting response code");
                 tracker.statusCode = [NSNumber numberWithInt:responseCode];
         }
-        NSLog(@"header fields:");
-        NSLog(@"%@", responseHeaderFields);
 
         if(responseHeaderFields != nil) {
-                NSLog(@"With header fields");
-                NSLog(@"%@", responseHeaderFields);
                 tracker.allHeaderFields = responseHeaderFields;
         }
 
@@ -206,7 +200,6 @@ typedef enum {
                 result(@"success");
                 break;
         case START_NEXT_SESSION:
-                NSLog(@"-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
                 [ADEumInstrumentation startNextSession];
                 result(@"success");
                 break;

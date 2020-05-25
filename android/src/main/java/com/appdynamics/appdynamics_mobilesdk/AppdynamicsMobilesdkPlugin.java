@@ -65,7 +65,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    Log.d("AppD",call.method);
+    // Log.d("AppD",call.method);
     switch(call.method) {
       case "takeScreenshot":
         Instrumentation.takeScreenshot();
@@ -191,21 +191,21 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
               fileinfo = filesparts[1];
             }
             //  StackTraceElement(declaringClass, methodName, fileName, linenumber)
-            Log.d("AppD", declaringClass);
-            Log.d("AppD", methodName);
-            Log.d("AppD", fileinfo);
-            Log.d("AppD", String.valueOf(linenumber));
+            // Log.d("AppD", declaringClass);
+            // Log.d("AppD", methodName);
+            // Log.d("AppD", fileinfo);
+            // Log.d("AppD", String.valueOf(linenumber));
             trace.add(new StackTraceElement(declaringClass, methodName, fileinfo, linenumber));
           }
         }
 
-        Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        Log.d("AppD",error);
-        Log.d("AppD",stackTrace);
+        // Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+        // Log.d("AppD",error);
+        // Log.d("AppD",stackTrace);
 
         ex.setStackTrace(trace.toArray(new StackTraceElement[0]));
-        Log.d("Appd", ex.toString());
-        ex.printStackTrace();
+        // Log.d("Appd", ex.toString());
+        // ex.printStackTrace();
         Instrumentation.reportError(ex, ErrorSeverityLevel.CRITICAL);
         result.success(1);
         break;
@@ -221,7 +221,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         result.success(1);
         break;
       case "startNextSession":
-      Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
+      // Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
         Instrumentation.startNextSession();
         result.success(1);
         break;
