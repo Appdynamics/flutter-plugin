@@ -39,7 +39,7 @@ buildscript {
     ...
     dependencies {
         classpath 'com.android.tools.build:gradle:3.0.1'
-	      classpath 'com.appdynamics:appdynamics-gradle-plugin:5.+'
+	      classpath 'com.appdynamics:appdynamics-gradle-plugin:20.+'
     }
 }
 ...
@@ -85,17 +85,19 @@ public class MainActivity extends FlutterActivity {
 
 Replace `<YOUR_APP_KEY>` with the app key of your mobile application.
 
-If you use AppDynamics OnPrem or SaaS and your controller is based in EMEA or APAC, [make sure to set the right collectorURL and screenshotURL](https://docs.appdynamics.com/display/PRO45/Instrument+an+Android+Application+Manually#InstrumentanAndroidApplicationManually-instrument-appInstrumenttheAndroidApplication)
+If you use AppDynamics OnPrem or SaaS and your controller is based in EMEA or APAC, [make sure to set the right collectorURL and screenshotURL](https://docs.appdynamics.com/display/latest/Instrument+an+Android+Application+Manually#InstrumentanAndroidApplicationManually-instrument-appInstrumenttheAndroidApplication)
 
 Your android application is now instrumented and you should see data appear in the AppDynamics controller.
 
-If necessary follow the official documentation to [customize the instrumentation](https://docs.appdynamics.com/display/PRO45/Customize+the+Android+Instrumentation).
+If necessary follow the official documentation to [customize the instrumentation](https://docs.appdynamics.com/display/latest/Customize+the+Android+Instrumentation).
 
 Your android application is now instrumented and you should see data appear in the AppDynamics controller.
 
 ### IOS Configuration
 
-Add the following code to the `ios/Runner/AppDelegate.m` file:
+Since this plugin will add the iOS SDK as dependency via it's podspec file, you can start with instrumenting your application.
+Follow the [instructions on how to instrument an iOS application](https://docs.appdynamics.com/display/latest/Instrument+an+iOS+Application).
+For example, if your application is ObjectiveC based, add the following code to the `ios/Runner/AppDelegate.m` file of your flutter project:
 
 ```objective-c
 #include "AppDelegate.h"
@@ -106,8 +108,13 @@ Add the following code to the `ios/Runner/AppDelegate.m` file:
 @implementation AppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-  [ADEumInstrumentation initWithKey: @"<YOUR_APP_KEY>"];
-  [GeneratedPluginRegistrant registerWithRegistry:self];
+  ADEumAgentConfiguration *config = [[ADEumAgentConfiguration alloc] initWithAppKey:@"<YOUR_APP_KEY>"];
+  // Uncomment the following, to configure the iOS Agent to report the metrics and screenshots to the right EUM server
+  // config.collectorURL = @"https://fra-col.eum-appdynamics.com";
+  // config.screenshotURL = @"https://fra-image.eum-appdynamics.com/";
+  // Uncomment the following to increase the log level of the agent
+  // config.loggingLevel = ADEumLoggingLevelAll;
+  [ADEumInstrumentation initWithConfiguration: config];
   // Override point for customization after application launch.
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
@@ -117,15 +124,15 @@ Add the following code to the `ios/Runner/AppDelegate.m` file:
 
 Replace `<YOUR_APP_KEY>` with the app key of your mobile application.
 
-This is like you would instrument any other iOS application. If you use AppDynamics OnPrem or SaaS and your controller is based in EMEA or APAC, [make sure to set the right collectorURL and screenshotURL](https://docs.appdynamics.com/display/PRO45/Instrument+an+iOS+Application#InstrumentaniOSApplication-step3InitializetheAgent).
+If you use AppDynamics OnPrem or SaaS and your controller is based in EMEA or APAC, [make sure to set the right collectorURL and screenshotURL](https://docs.appdynamics.com/display/latest/Instrument+an+iOS+Application#InstrumentaniOSApplication-step3InitializetheAgent).
 
-If necessary follow the official documentation to [customize the instrumentation](https://docs.appdynamics.com/display/PRO45/Customize+the+iOS+Instrumentation).
+If necessary follow the official documentation to [customize the instrumentation](https://docs.appdynamics.com/display/latest/Customize+the+iOS+Instrumentation).
 
 Your iOS application is now instrumented and you should see data appear in the AppDynamics controller.
 
 # Usage
 
-Out of the box the AppDynamics agent will deliver some information like session count, screenshots (iOS only), etc. To enrich your instrumentation you can leverage the API that comes with this plugin. This API tries to be as close as possible to the [iOS](https://docs.appdynamics.com/display/PRO45/Customize+the+iOS+Instrumentation) and [android](https://docs.appdynamics.com/display/PRO45/Customize+the+Android+Instrumentation) APIs:
+Out of the box the AppDynamics agent will deliver some information like session count, screenshots (iOS only), etc. To enrich your instrumentation you can leverage the API that comes with this plugin. This API tries to be as close as possible to the [iOS](https://docs.appdynamics.com/display/latest/Customize+the+iOS+Instrumentation) and [android](https://docs.appdynamics.com/display/latest/Customize+the+Android+Instrumentation) APIs:
 
 ## Collect Additional Types of Data
 
