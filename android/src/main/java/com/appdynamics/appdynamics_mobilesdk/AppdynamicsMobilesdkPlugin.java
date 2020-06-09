@@ -65,7 +65,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
 
   @Override
   public void onMethodCall(MethodCall call, Result result) {
-    // Log.d("AppD",call.method);
     switch(call.method) {
       case "takeScreenshot":
         Instrumentation.takeScreenshot();
@@ -132,7 +131,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         try {
           Instrumentation.setUserDataDate(call.argument("key").toString(), dateFormat.parse(call.argument("value").toString()));
         } catch(ParseException e) {
-          
+
         }
         result.success(1);
         break;
@@ -166,7 +165,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
 
         for(int i = 0; i < tracelines.length; i ++) {
           String line = tracelines[i];
-          //Log.d("AppD-line",line);
           //#0      _MyAppState._makeGetRequest (package:appdynamics_mobilesdk_example/main.dart:129:5)(test:1)
           //dart:async/zone.dart:1029:19
 
@@ -176,7 +174,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
           String[] parts = spacesanitized.split("\\(");
           if(parts.length > 1) {
             String fileinfo = parts[1].replaceAll("(\\(|\\))", "");
-            // Log.d("fileinfo", fileinfo);
             String[] filesparts = fileinfo.split(":");
             String methodName = parts[0].substring(3, parts[0].length()-1).trim();
             String declaringClass = "Flutter.NoClass";
@@ -189,22 +186,11 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
               linenumber = Integer.parseInt(filesparts[2]);
               fileinfo = filesparts[1];
             }
-            //  StackTraceElement(declaringClass, methodName, fileName, linenumber)
-            // Log.d("AppD", declaringClass);
-            // Log.d("AppD", methodName);
-            // Log.d("AppD", fileinfo);
-            // Log.d("AppD", String.valueOf(linenumber));
             trace.add(new StackTraceElement(declaringClass, methodName, fileinfo, linenumber));
           }
         }
 
-        // Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-APPD-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
-        // Log.d("AppD",error);
-        // Log.d("AppD",stackTrace);
-
         ex.setStackTrace(trace.toArray(new StackTraceElement[0]));
-        // Log.d("Appd", ex.toString());
-        // ex.printStackTrace();
         Instrumentation.reportError(ex, ErrorSeverityLevel.CRITICAL);
         result.success(1);
         break;
@@ -220,7 +206,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         result.success(1);
         break;
       case "startNextSession":
-      // Log.d("AppD","-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-START NEXT SESSION-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-");
         Instrumentation.startNextSession();
         result.success(1);
         break;

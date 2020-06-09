@@ -1,3 +1,7 @@
-## 0.0.1
+## 0.9.0
 
-* TODO: Describe initial release.
+* Initial Release
+
+* Includes Support for instrumenting android/ios apps using the AppDynamics Mobile SDK
+
+* Add coverage for most features (network requests, custom data, session frames, etc.)
