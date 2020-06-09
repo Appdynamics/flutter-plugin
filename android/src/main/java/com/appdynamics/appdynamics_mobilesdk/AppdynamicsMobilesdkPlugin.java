@@ -76,7 +76,6 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
           URL url = new URL(call.argument("url").toString());
           result.success(this.startRequest(url));
         } catch(MalformedURLException e) {
-          e.printStackTrace();
           result.success(1);
         }
         break;
@@ -133,7 +132,7 @@ public class AppdynamicsMobilesdkPlugin implements MethodCallHandler {
         try {
           Instrumentation.setUserDataDate(call.argument("key").toString(), dateFormat.parse(call.argument("value").toString()));
         } catch(ParseException e) {
-          e.printStackTrace();
+          
         }
         result.success(1);
         break;
