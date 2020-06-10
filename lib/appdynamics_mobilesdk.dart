@@ -1,3 +1,4 @@
+/// Flutter plugin to utilize the AppDynamics SDK.
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -71,7 +72,7 @@ class AppdynamicsHttpClient extends http.BaseClient{
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    AppdynamicsHttpRequestTracker tracker = await AppdynamicsMobilesdk.startRequest(request.url.toString());
+    AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(request.url.toString());
     return _httpClient.send(request).then((response) {
       tracker.withResponseCode(response.statusCode);
       tracker.withResponseHeaderFields(response.headers);
@@ -112,6 +113,8 @@ class AppdynamicsSessionFrame {
   }
 }
 
+/// Class to report HTTP requests. Use the startRequest method to create a tracker
+/// and use reportDone() to end the tracking
 class AppdynamicsHttpRequestTracker {
 
   Future<String> trackerId;
@@ -160,12 +163,18 @@ class AppdynamicsHttpRequestTracker {
   }
 }
 
+/// Interact with the AppDynamics Agent running in your application
+///
+/// This class provides a number of methods to interact with the AppDynamics Agent including
+///
+/// * Reporting custom metrics/timers
+/// * Reporting information points manually
 class AppdynamicsMobilesdk {
-
 
   static const MethodChannel _channel =
       const MethodChannel('appdynamics_mobilesdk');
 
+  /// Begins tracking an HTTP request. Call this immediately before sending an HTTP request to track it manually.
   static AppdynamicsHttpRequestTracker startRequest(String url) {
     return new AppdynamicsHttpRequestTracker(url, _channel);
   }
@@ -212,6 +221,7 @@ class AppdynamicsMobilesdk {
     await _channel.invokeMethod('setUserDataDate', {"key": key, "value": value.toString()});
   }
 
+  /// Reports an error that was caught.
   static Future<void> reportError(dynamic error, dynamic stackTrace) async {
     await _channel.invokeMethod('reportError',{ "error": error.toString(), "stackTrace": stackTrace.toString()});
   }
@@ -228,10 +238,12 @@ class AppdynamicsMobilesdk {
     await _channel.invokeMethod('startNextSession');
   }
 
+  /// Leaves a breadcrumb that will appear in a crash report.
   static Future<void> leaveBreadcrumb(breadcrumb, visibleInCrashesAndSessions) async {
     await _channel.invokeMethod('leaveBreadcrumb', { "breadcrumb": breadcrumb, "visibleInCrashesAndSessions": visibleInCrashesAndSessions});
   }
 
+  /// Reports metric value for the given name.
   static Future<void> reportMetric(String name, int value) async {
     await _channel.invokeMethod('reportMetric', {"name": name, "value": value});
   }

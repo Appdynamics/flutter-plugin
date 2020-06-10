@@ -5,7 +5,6 @@ import 'dart:math';
 import 'package:http/http.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
-// import 'package:flutter_load_local_json/settings.dart';
 
 Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');

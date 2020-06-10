@@ -13,19 +13,12 @@ You can use the example app, which is part of this repository, to try out how yo
 
 ## Installation
 
-To instrument your flutter based mobile application with AppDynamics MRUM, download the latest version via git:
-
-```shell
-git clone https://github.com/Appdynamics/flutter-plugin
-```
-
-Next add it as path-based dependency to your `pubspec.yml`:
+To instrument your flutter based mobile application with AppDynamics MRUM, add this to your package's pubspec.yaml file:
 
 ```yaml
 dependencies:
   ...
-  appdynamics_mobilesdk:
-    path: /path/to/flutter-plugin
+  appdynamics_mobilesdk: ^0.9.1
 ```
 
 Follow the additional steps below to add the AppDynamics agent to iOS and android platform.
@@ -150,7 +143,7 @@ Start and end a custom timer at any place of your code.
 AppdynamicsMobilesdk.startTimer('Timer Name');
 ...
 AppdynamicsMobilesdk.stopTimer('Timer Name');
-``
+```
 
 ### User Data
 
