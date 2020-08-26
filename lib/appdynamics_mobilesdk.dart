@@ -7,20 +7,19 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter/material.dart';
 
 class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
-
   AppdynamicsSessionFrame _currentFrame;
   String _currentName;
 
   void _updateSessionFrame(Route<dynamic> route) async {
     String name = ''; // route.name;//settings.name;
     // No name could be extracted, skip.
-    if(name == null) {
+    if (name == null) {
       // Try to infer a name from the widget builder
-      if(route is MaterialPageRoute<dynamic>) {
+      if (route is MaterialPageRoute<dynamic>) {
         String builderType = route.builder.runtimeType.toString();
-        if(builderType.startsWith('(BuildContext) =>')) {
+        if (builderType.startsWith('(BuildContext) =>')) {
           String returnType = builderType.split('=>')[1].trim();
-          if(returnType != 'Widget') {
+          if (returnType != 'Widget') {
             name = returnType;
           }
         }
@@ -29,10 +28,10 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
       }
     }
     // Name was not updated, skip.
-    if(_currentName != null && name == _currentName) {
+    if (_currentName != null && name == _currentName) {
       return;
     }
-    if(_currentFrame != null) {
+    if (_currentFrame != null) {
       _currentFrame.end();
     }
     _currentName = name;
@@ -64,15 +63,15 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
   }
 }
 
-
-class AppdynamicsHttpClient extends http.BaseClient{
+class AppdynamicsHttpClient extends http.BaseClient {
   final http.Client _httpClient;
 
   AppdynamicsHttpClient(this._httpClient);
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
-    AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(request.url.toString());
+    AppdynamicsHttpRequestTracker tracker =
+        AppdynamicsMobilesdk.startRequest(request.url.toString());
     return _httpClient.send(request).then((response) {
       tracker.withResponseCode(response.statusCode);
       tracker.withResponseHeaderFields(response.headers);
@@ -90,7 +89,8 @@ class AppdynamicsSessionFrame {
   String name;
   MethodChannel _channel;
 
-  AppdynamicsSessionFrame(String sessionId, String name, MethodChannel _channel) {
+  AppdynamicsSessionFrame(
+      String sessionId, String name, MethodChannel _channel) {
     this.sessionId = sessionId;
     this.name = name;
     this._channel = _channel;
@@ -98,17 +98,15 @@ class AppdynamicsSessionFrame {
 
   Future<AppdynamicsSessionFrame> updateName(String name) async {
     this.name = name;
-    await this._channel.invokeMethod('updateSessionFrame', {
-      "sessionId": this.sessionId,
-      "name": this.name
-    });
+    await this._channel.invokeMethod(
+        'updateSessionFrame', {"sessionId": this.sessionId, "name": this.name});
     return this;
   }
 
   Future<AppdynamicsSessionFrame> end() async {
-    await this._channel.invokeMethod('endSessionFrame', {
-      "sessionId": this.sessionId
-    });
+    await this
+        ._channel
+        .invokeMethod('endSessionFrame', {"sessionId": this.sessionId});
     return this;
   }
 }
@@ -116,7 +114,6 @@ class AppdynamicsSessionFrame {
 /// Class to report HTTP requests. Use the startRequest method to create a tracker
 /// and use reportDone() to end the tracking
 class AppdynamicsHttpRequestTracker {
-
   Future<String> trackerId;
   String error;
   Exception exception;
@@ -124,9 +121,8 @@ class AppdynamicsHttpRequestTracker {
   MethodChannel _channel;
   Map<String, String> responseHeaderFields;
 
-
   AppdynamicsHttpRequestTracker(String url, MethodChannel _channel) {
-    this.trackerId = _channel.invokeMethod('startRequest', { "url": url });
+    this.trackerId = _channel.invokeMethod('startRequest', {"url": url});
     this._channel = _channel;
     this.responseCode = -1;
   }
@@ -146,7 +142,8 @@ class AppdynamicsHttpRequestTracker {
     return this;
   }
 
-  AppdynamicsHttpRequestTracker withResponseHeaderFields(Map<String, String> fields) {
+  AppdynamicsHttpRequestTracker withResponseHeaderFields(
+      Map<String, String> fields) {
     this.responseHeaderFields = fields;
     return this;
   }
@@ -170,7 +167,6 @@ class AppdynamicsHttpRequestTracker {
 /// * Reporting custom metrics/timers
 /// * Reporting information points manually
 class AppdynamicsMobilesdk {
-
   static const MethodChannel _channel =
       const MethodChannel('appdynamics_mobilesdk');
 
@@ -180,19 +176,19 @@ class AppdynamicsMobilesdk {
   }
 
   static Future<AppdynamicsSessionFrame> startSessionFrame(String name) async {
-    final String sessionId = await _channel.invokeMethod('startSessionFrame', { "name": name });
+    final String sessionId =
+        await _channel.invokeMethod('startSessionFrame', {"name": name});
     return new AppdynamicsSessionFrame(sessionId, name, _channel);
   }
 
-  static Future<Map<String, String>> getCorrelationHeaders([bool valuesAsList = true]) async {
+  static Future<Map<String, String>> getCorrelationHeaders(
+      [bool valuesAsList = true]) async {
     Map r = await _channel.invokeMethod('getCorrelationHeaders');
-    if(r is Map<String, String>) {
+    if (r is Map<String, String>) {
       return r;
     }
     Map<String, String> result = {};
-    r.forEach((k,v) => {
-      result[k] = v.toString()
-    });
+    r.forEach((k, v) => {result[k] = v.toString()});
     return result;
   }
 
@@ -205,33 +201,38 @@ class AppdynamicsMobilesdk {
   }
 
   static Future<void> setUserDataLong(String key, int value) async {
-    await _channel.invokeMethod('setUserDataLong', {"key": key, "value": value});
+    await _channel
+        .invokeMethod('setUserDataLong', {"key": key, "value": value});
   }
 
   static Future<void> setUserDataBoolean(String key, bool value) async {
-    await _channel.invokeMethod('setUserDataBoolean', {"key": key, "value": value});
+    await _channel
+        .invokeMethod('setUserDataBoolean', {"key": key, "value": value});
   }
 
   static Future<void> setUserDataDouble(String key, double value) async {
-    await _channel.invokeMethod('setUserDataDouble', {"key": key, "value": value});
+    await _channel
+        .invokeMethod('setUserDataDouble', {"key": key, "value": value});
   }
 
   static Future<void> setUserDataDate(String key, DateTime dt) async {
     String value = DateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").format(dt);
-    await _channel.invokeMethod('setUserDataDate', {"key": key, "value": value.toString()});
+    await _channel.invokeMethod(
+        'setUserDataDate', {"key": key, "value": value.toString()});
   }
 
   /// Reports an error that was caught.
   static Future<void> reportError(dynamic error, dynamic stackTrace) async {
-    await _channel.invokeMethod('reportError',{ "error": error.toString(), "stackTrace": stackTrace.toString()});
+    await _channel.invokeMethod('reportError',
+        {"error": error.toString(), "stackTrace": stackTrace.toString()});
   }
 
   static Future<void> startTimer(String label) async {
-    await _channel.invokeMethod('startTimer',{"label": label});
+    await _channel.invokeMethod('startTimer', {"label": label});
   }
 
   static Future<void> stopTimer(String label) async {
-    await _channel.invokeMethod('stopTimer',{"label": label});
+    await _channel.invokeMethod('stopTimer', {"label": label});
   }
 
   static Future<void> startNextSession() async {
@@ -239,8 +240,12 @@ class AppdynamicsMobilesdk {
   }
 
   /// Leaves a breadcrumb that will appear in a crash report.
-  static Future<void> leaveBreadcrumb(breadcrumb, visibleInCrashesAndSessions) async {
-    await _channel.invokeMethod('leaveBreadcrumb', { "breadcrumb": breadcrumb, "visibleInCrashesAndSessions": visibleInCrashesAndSessions});
+  static Future<void> leaveBreadcrumb(
+      breadcrumb, visibleInCrashesAndSessions) async {
+    await _channel.invokeMethod('leaveBreadcrumb', {
+      "breadcrumb": breadcrumb,
+      "visibleInCrashesAndSessions": visibleInCrashesAndSessions
+    });
   }
 
   /// Reports metric value for the given name.
