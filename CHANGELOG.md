@@ -1,3 +1,9 @@
+## 0.9.3
+
+* flutter format lib/appdynamics_mobilesdk.dart
+
+* java lib now implements FlutterPlugin class as well
+
 ## 0.9.2
 
 * Fixed health suggestions in lib/appdynamics_mobilesdk.dart
