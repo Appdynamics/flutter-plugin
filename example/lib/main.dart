@@ -158,7 +158,7 @@ class _MyAppState extends State<MyApp> {
           "userId", "833ED2BF-FAA4-4660-A58F-4BA1C9C953D5");
       await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", true);
     } else {
-      await AppdynamicsMobilesdk.setUserData("language", "fi_FI");
+      await AppdynamicsMobilesdk.setUserData("language", "en_US");
       await AppdynamicsMobilesdk.setUserData(
           "userId", "CCBF8FE3-20C3-48F6-822B-4FC69916B1A1");
       await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", false);
