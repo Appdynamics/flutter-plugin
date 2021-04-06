@@ -1,3 +1,8 @@
+## 1.0.0
+
+* Update dependencies for flutter 2 compatibility
+
+
 ## 0.9.3
 
 * flutter format lib/appdynamics_mobilesdk.dart
