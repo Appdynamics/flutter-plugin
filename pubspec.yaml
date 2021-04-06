@@ -1,6 +1,6 @@
 name: appdynamics_mobilesdk
 description: A flutter plugin to integrate AppDynamics Mobile Real User Monitoring with your application.
-version: 0.9.3
+version: 1.0.0
 homepage: https://github.com/Appdynamics/flutter-plugin/
 issue_tracker: https://github.com/Appdynamics/flutter-plugin/issues
 

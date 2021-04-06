@@ -18,7 +18,7 @@ To instrument your flutter based mobile application with AppDynamics MRUM, add t
 ```yaml
 dependencies:
   ...
-  appdynamics_mobilesdk: ^0.9.3
+  appdynamics_mobilesdk: ^1.0.0
 ```
 
 Follow the additional steps below to add the AppDynamics agent to iOS and android platform.
