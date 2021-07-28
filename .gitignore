@@ -30,7 +30,7 @@ doc/api/
 .idea/
 
 # Visual Studio Code related
-.vscode/
+# .vscode/
 
 # Flutter repo-specific
 /bin/cache/
