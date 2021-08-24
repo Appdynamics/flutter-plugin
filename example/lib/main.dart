@@ -229,8 +229,8 @@ class _MyAppState extends State<MyApp> {
       print(response.headers);
       */
       tracker
-          .withResponseCode(responseCode)
-          .withResponseHeaderFields(response.headers);
+          ..withResponseCode(responseCode)
+          ..withResponseHeaderFields(response.headers);
 
       if (responseCode > 500) {
         tracker.withError('An error!!!');
