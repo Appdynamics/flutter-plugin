@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart';
-import 'package:flutter/services.dart' show rootBundle;
+
 import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:http/http.dart';
 
 Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');
@@ -17,7 +18,10 @@ Future<Null> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (FlutterErrorDetails details) async {
-    Zone.current.handleUncaughtError(details.exception, details.stack);
+    Zone.current.handleUncaughtError(
+      details.exception,
+      details.stack ?? StackTrace.empty,
+    );
   };
   runZoned<Future<Null>>(() async {
     runApp(new MyApp());
@@ -32,7 +36,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  AppdynamicsSessionFrame frame;
+  late AppdynamicsSessionFrame frame;
   int _counter = 0;
   int frameCounter = 0;
 
@@ -50,7 +54,7 @@ class _MyAppState extends State<MyApp> {
   ];
 
   String _frameName = 'Unknown';
-  String _image = '';
+  String? _image = '';
 
   @override
   void initState() {
@@ -66,7 +70,7 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     var settings =
-        json.decode(await rootBundle.loadString('assets/settings.json'));
+        json.decode(await rootBundle.loadString('assets/settings.sample.json'));
 
     if (settings.containsKey("frames")) {
       frames = settings["frames"];
@@ -156,12 +160,14 @@ class _MyAppState extends State<MyApp> {
       await AppdynamicsMobilesdk.setUserData("language", "de_DE");
       await AppdynamicsMobilesdk.setUserData(
           "userId", "833ED2BF-FAA4-4660-A58F-4BA1C9C953D5");
-      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", true);
+      await AppdynamicsMobilesdk.setUserDataBoolean(
+          "hasSimplifiedEnabled", true);
     } else {
       await AppdynamicsMobilesdk.setUserData("language", "fi_FI");
       await AppdynamicsMobilesdk.setUserData(
           "userId", "CCBF8FE3-20C3-48F6-822B-4FC69916B1A1");
-      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", false);
+      await AppdynamicsMobilesdk.setUserDataBoolean(
+          "hasSimplifiedEnabled", false);
     }
 
     //AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
@@ -175,7 +181,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   _crashMe() async {
-    var f;
+    dynamic f;
     f();
     var x = () {
       var y = () => f();
@@ -198,8 +204,10 @@ class _MyAppState extends State<MyApp> {
   Future<Response> _makeGetRequest(uri, [responseCode = -1]) async {
     print('GET $uri');
     // AppDynamics specific request
-    AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(uri);
-    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+    AppdynamicsHttpRequestTracker tracker =
+        AppdynamicsMobilesdk.startRequest(uri);
+    Map<String, String> correlationHeaders =
+        await AppdynamicsMobilesdk.getCorrelationHeaders();
 
     print("CH BEGIN");
     print(correlationHeaders);

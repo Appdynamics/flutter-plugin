@@ -1,16 +1,17 @@
 /// Flutter plugin to utilize the AppDynamics SDK.
 import 'dart:async';
-import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
+
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 
 class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
-  AppdynamicsSessionFrame _currentFrame;
-  String _currentName;
+  AppdynamicsSessionFrame? _currentFrame;
+  String? _currentName;
 
-  void _updateSessionFrame(Route<dynamic> route) async {
+  void _updateSessionFrame(Route<dynamic>? route) async {
     String name = ''; // route.name;//settings.name;
     // No name could be extracted, skip.
     if (name == null) {
@@ -32,32 +33,32 @@ class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
       return;
     }
     if (_currentFrame != null) {
-      _currentFrame.end();
+      _currentFrame!.end();
     }
     _currentName = name;
     _currentFrame = await AppdynamicsMobilesdk.startSessionFrame(name);
   }
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPush(route, previousRoute);
     _updateSessionFrame(route);
   }
 
   @override
-  void didReplace({Route<dynamic> newRoute, Route<dynamic> oldRoute}) {
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
     _updateSessionFrame(newRoute);
   }
 
   @override
-  void didRemove(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didRemove(route, previousRoute);
     _updateSessionFrame(previousRoute);
   }
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic> previousRoute) {
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
     super.didPop(route, previousRoute);
     _updateSessionFrame(previousRoute);
   }
@@ -85,16 +86,11 @@ class AppdynamicsHttpClient extends http.BaseClient {
 }
 
 class AppdynamicsSessionFrame {
-  String sessionId;
+  String? sessionId;
   String name;
   MethodChannel _channel;
 
-  AppdynamicsSessionFrame(
-      String sessionId, String name, MethodChannel _channel) {
-    this.sessionId = sessionId;
-    this.name = name;
-    this._channel = _channel;
-  }
+  AppdynamicsSessionFrame(this.sessionId, this.name, this._channel);
 
   Future<AppdynamicsSessionFrame> updateName(String name) async {
     this.name = name;
@@ -114,18 +110,16 @@ class AppdynamicsSessionFrame {
 /// Class to report HTTP requests. Use the startRequest method to create a tracker
 /// and use reportDone() to end the tracking
 class AppdynamicsHttpRequestTracker {
-  Future<String> trackerId;
-  String error;
-  Exception exception;
+  Future<String?> trackerId;
+  String? error;
+  Exception? exception;
   int responseCode;
   MethodChannel _channel;
-  Map<String, String> responseHeaderFields;
+  Map<String, String>? responseHeaderFields;
 
-  AppdynamicsHttpRequestTracker(String url, MethodChannel _channel) {
-    this.trackerId = _channel.invokeMethod('startRequest', {"url": url});
-    this._channel = _channel;
-    this.responseCode = -1;
-  }
+  AppdynamicsHttpRequestTracker(String url, this. _channel)
+      : this.trackerId = _channel.invokeMethod('startRequest', {"url": url}),
+        this.responseCode = -1;
 
   AppdynamicsHttpRequestTracker withResponseCode(int code) {
     this.responseCode = code;
@@ -149,7 +143,7 @@ class AppdynamicsHttpRequestTracker {
   }
 
   Future<void> reportDone() async {
-    String trackerId = await this.trackerId;
+    String? trackerId = await this.trackerId;
     await this._channel.invokeMethod('reportDone', {
       "trackerId": trackerId,
       "responseCode": this.responseCode,
@@ -176,19 +170,19 @@ class AppdynamicsMobilesdk {
   }
 
   static Future<AppdynamicsSessionFrame> startSessionFrame(String name) async {
-    final String sessionId =
+    final String? sessionId =
         await _channel.invokeMethod('startSessionFrame', {"name": name});
     return new AppdynamicsSessionFrame(sessionId, name, _channel);
   }
 
   static Future<Map<String, String>> getCorrelationHeaders(
       [bool valuesAsList = true]) async {
-    Map r = await _channel.invokeMethod('getCorrelationHeaders');
+    Map? r = await _channel.invokeMethod('getCorrelationHeaders');
     if (r is Map<String, String>) {
       return r;
     }
     Map<String, String> result = {};
-    r.forEach((k, v) => {result[k] = v.toString()});
+    r!.forEach((k, v) => {result[k] = v.toString()});
     return result;
   }
 
