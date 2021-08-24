@@ -7,58 +7,57 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 
-class AppdynamicsRouteObserver extends RouteObserver<Route<dynamic>> {
+class AppdynamicsRouteObserver extends RouteObserver<Route> {
   AppdynamicsSessionFrame? _currentFrame;
   String? _currentName;
 
-  void _updateSessionFrame(Route<dynamic>? route) async {
+  Future<void> _updateSessionFrame(Route? route) async {
     String name = ''; // route.name;//settings.name;
     // No name could be extracted, skip.
-    if (name == null) {
-      // Try to infer a name from the widget builder
-      if (route is MaterialPageRoute<dynamic>) {
-        String builderType = route.builder.runtimeType.toString();
-        if (builderType.startsWith('(BuildContext) =>')) {
-          String returnType = builderType.split('=>')[1].trim();
-          if (returnType != 'Widget') {
-            name = returnType;
-          }
+    // Try to infer a name from the widget builder
+    if (route is MaterialPageRoute) {
+      final String builderType = route.builder.runtimeType.toString();
+      if (builderType.startsWith('(BuildContext) =>')) {
+        final String returnType = builderType.split('=>')[1].trim();
+        if (returnType != 'Widget') {
+          name = returnType;
         }
-      } else {
-        return;
       }
+    } else {
+      return;
     }
+
     // Name was not updated, skip.
     if (_currentName != null && name == _currentName) {
       return;
     }
-    if (_currentFrame != null) {
-      _currentFrame!.end();
-    }
+
+    await _currentFrame?.end();
+
     _currentName = name;
     _currentFrame = await AppdynamicsMobilesdk.startSessionFrame(name);
   }
 
   @override
-  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didPush(Route route, Route? previousRoute) {
     super.didPush(route, previousRoute);
     _updateSessionFrame(route);
   }
 
   @override
-  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+  void didReplace({Route? newRoute, Route? oldRoute}) {
     super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
     _updateSessionFrame(newRoute);
   }
 
   @override
-  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didRemove(Route route, Route? previousRoute) {
     super.didRemove(route, previousRoute);
     _updateSessionFrame(previousRoute);
   }
 
   @override
-  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+  void didPop(Route route, Route? previousRoute) {
     super.didPop(route, previousRoute);
     _updateSessionFrame(previousRoute);
   }
@@ -117,7 +116,7 @@ class AppdynamicsHttpRequestTracker {
   MethodChannel _channel;
   Map<String, String>? responseHeaderFields;
 
-  AppdynamicsHttpRequestTracker(String url, this. _channel)
+  AppdynamicsHttpRequestTracker(String url, this._channel)
       : this.trackerId = _channel.invokeMethod('startRequest', {"url": url}),
         this.responseCode = -1;
 
