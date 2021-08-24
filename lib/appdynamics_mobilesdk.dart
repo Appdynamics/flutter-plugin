@@ -12,18 +12,24 @@ class AppdynamicsRouteObserver extends RouteObserver<Route> {
   String? _currentName;
 
   Future<void> _updateSessionFrame(Route? route) async {
-    String name = ''; // route.name;//settings.name;
+    String? name = route?.settings.name;
     // No name could be extracted, skip.
     // Try to infer a name from the widget builder
-    if (route is MaterialPageRoute) {
-      final String builderType = route.builder.runtimeType.toString();
-      if (builderType.startsWith('(BuildContext) =>')) {
-        final String returnType = builderType.split('=>')[1].trim();
-        if (returnType != 'Widget') {
-          name = returnType;
+    if (name == null) {
+      if (route is MaterialPageRoute) {
+        final String builderType = route.builder.runtimeType.toString();
+        if (builderType.startsWith('(BuildContext) =>')) {
+          final String returnType = builderType.split('=>')[1].trim();
+          if (returnType != 'Widget') {
+            name = returnType;
+          }
         }
+      } else {
+        return;
       }
-    } else {
+    }
+
+    if (name == null) {
       return;
     }
 
