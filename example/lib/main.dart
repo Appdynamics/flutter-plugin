@@ -23,9 +23,10 @@ Future<void> main() async {
       details.stack ?? StackTrace.empty,
     );
   };
-  runZoned<Future<Null>>(() async {
-    runApp(new MyApp());
-  }, onError: (error, stackTrace) async {
+
+  runZonedGuarded(() async {
+    runApp(MyApp());
+  }, (error, stackTrace) async {
     await _reportError(error, stackTrace);
   });
 }
