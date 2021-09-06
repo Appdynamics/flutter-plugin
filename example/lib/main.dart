@@ -7,14 +7,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:http/http.dart';
 
-Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
+Future<void> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');
   print(stackTrace);
   print('Reporting to Appdynamics...');
   AppdynamicsMobilesdk.reportError(error, stackTrace);
 }
 
-Future<Null> main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (FlutterErrorDetails details) async {
@@ -90,7 +90,7 @@ class _MyAppState extends State<MyApp> {
   _clock() async {
     while (true) {
       await _next();
-      await new Future.delayed(const Duration(seconds: 10));
+      await Future.delayed(const Duration(seconds: 10));
       print("Next after 10 seconds");
     }
   }
@@ -108,7 +108,7 @@ class _MyAppState extends State<MyApp> {
       _image = image;
     });
 
-    var rng = new Random();
+    var rng = Random();
 
     var breadCrumb =
         current.containsKey("breadcrumb") ? current["breadcrumb"] : false;
@@ -152,7 +152,7 @@ class _MyAppState extends State<MyApp> {
       }
     }
 
-    await new Future.delayed(const Duration(seconds: 2));
+    await Future.delayed(const Duration(seconds: 2));
 
     await AppdynamicsMobilesdk.takeScreenshot();
 
@@ -229,8 +229,8 @@ class _MyAppState extends State<MyApp> {
       print(response.headers);
       */
       tracker
-          ..withResponseCode(responseCode)
-          ..withResponseHeaderFields(response.headers);
+        ..withResponseCode(responseCode)
+        ..withResponseHeaderFields(response.headers);
 
       if (responseCode > 500) {
         tracker.withError('An error!!!');

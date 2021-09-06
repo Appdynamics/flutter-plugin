@@ -174,7 +174,7 @@ class AppdynamicsMobilesdk {
 
   /// Begins tracking an HTTP request. Call this immediately before sending an HTTP request to track it manually.
   static AppdynamicsHttpRequestTracker startRequest(String url) {
-    return new AppdynamicsHttpRequestTracker(url, _channel);
+    return AppdynamicsHttpRequestTracker(url, _channel);
   }
 
   static Future<AppdynamicsSessionFrame> startSessionFrame(String name) async {
@@ -185,7 +185,7 @@ class AppdynamicsMobilesdk {
       throw Exception('sessionId must not be null');
     }
 
-    return new AppdynamicsSessionFrame(sessionId, name, _channel);
+    return AppdynamicsSessionFrame(sessionId, name, _channel);
   }
 
   static Future<Map<String, String>> getCorrelationHeaders([
