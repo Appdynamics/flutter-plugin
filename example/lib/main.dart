@@ -1,29 +1,35 @@
-import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
-import 'package:http/http.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
 
-Future<Null> _reportError(dynamic error, dynamic stackTrace) async {
+import 'package:appdynamics_mobilesdk/appdynamics_mobilesdk.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+
+Future<void> _reportError(dynamic error, dynamic stackTrace) async {
   print('Caught error: $error');
   print(stackTrace);
   print('Reporting to Appdynamics...');
-  AppdynamicsMobilesdk.reportError(error, stackTrace);
+
+  await AppdynamicsMobilesdk.reportError(error, stackTrace);
 }
 
-Future<Null> main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   FlutterError.onError = (FlutterErrorDetails details) async {
-    Zone.current.handleUncaughtError(details.exception, details.stack);
+    if (details.stack != null) {
+      Zone.current.handleUncaughtError(details.exception, details.stack!);
+    }
   };
-  runZoned<Future<Null>>(() async {
-    runApp(new MyApp());
-  }, onError: (error, stackTrace) async {
-    await _reportError(error, stackTrace);
-  });
+
+  runZonedGuarded<void>(
+    () async {
+      runApp(MyApp());
+    },
+    (Object error, StackTrace stackTrace) async {
+      await _reportError(error, stackTrace);
+    },
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -32,24 +38,25 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  AppdynamicsSessionFrame frame;
+  late AppdynamicsSessionFrame frame;
   int _counter = 0;
   int frameCounter = 0;
 
-  List<dynamic> frames = [
-    {
-      "name": "Login",
-      "image": "",
-      "urls": ["http://www.appdynamics.com/"]
+  List<Map<String, dynamic>> frames = <Map<String, dynamic>>[
+    <String, dynamic>{
+      'name': 'Login',
+      'image':
+          'https://www.appdynamics.com/c/r/appdynamics/index/jcr:content/Grid/blade_2030858110_cop_57397882/bladeContents1/image/image.img.jpg/1618434204181.jpg',
+      'urls': <String>['http://www.appdynamics.com/']
     },
-    {
-      "name": "Logut",
-      "image": "",
-      "urls": ["http://www.appdynamics.com/"]
+    <String, dynamic>{
+      'name': 'Logut',
+      'image':
+          'https://www.appdynamics.com/c/r/appdynamics/index/jcr:content/Grid/blade_1481457281_cop/bladeContents/tile_copy_copy/image.img.jpg/1626797278076.jpg',
+      'urls': <String>['http://www.appdynamics.com/']
     }
   ];
 
-  String _frameName = 'Unknown';
   String _image = '';
 
   @override
@@ -63,56 +70,45 @@ class _MyAppState extends State<MyApp> {
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    var settings =
-        json.decode(await rootBundle.loadString('assets/settings.json'));
-
-    if (settings.containsKey("frames")) {
-      frames = settings["frames"];
+    if (!mounted) {
+      return;
     }
 
-    frame = await AppdynamicsMobilesdk.startSessionFrame("App Start");
+    frame = await AppdynamicsMobilesdk.startSessionFrame('App Start');
 
     setState(() {
       print(_counter);
       _counter++;
-      _frameName = "App Start";
     });
 
-    _clock();
+    await _clock();
   }
 
-  _clock() async {
-    while (true) {
+  Future<void> _clock() async {
+    Stream<void>.periodic(const Duration(seconds: 10)).listen((_) async {
       await _next();
-      await new Future.delayed(const Duration(seconds: 10));
-      print("Next after 10 seconds");
-    }
+      print('Next after 10 seconds');
+    });
   }
 
-  _next() async {
+  Future<void> _next() async {
     await frame.end();
 
-    var current = frames[frameCounter % frames.length];
+    final Map<String, dynamic> current = frames[frameCounter % frames.length];
 
-    var frameName = current["name"];
-    var image = current["image"];
+    final String frameName = current['name'].toString();
+    final String image = current['image'].toString();
 
     setState(() {
-      _frameName = frameName;
       _image = image;
     });
 
-    var rng = new Random();
+    final Random rng = Random();
 
-    var breadCrumb =
-        current.containsKey("breadcrumb") ? current["breadcrumb"] : false;
-    var startTimer =
-        current.containsKey("startTimer") ? current["startTimer"] : false;
-    var stopTimer =
-        current.containsKey("stopTimer") ? current["stopTimer"] : false;
-    var urls = current.containsKey("urls") ? current["urls"] : false;
+    final String? breadCrumb = current.containsKey('breadcrumb') ? current['breadcrumb'].toString() : null;
+    // final startTimer = current.containsKey('startTimer') ? current['startTimer'] : false;
+    // final stopTimer = current.containsKey('stopTimer') ? current['stopTimer'] : false;
+    final List<String> urls = current.containsKey('urls') ? current['urls'] as List<String> : <String>[];
 
     if (frameCounter >= frames.length) {
       print('Starting a new session after ' + frameName);
@@ -124,90 +120,80 @@ class _MyAppState extends State<MyApp> {
     print('===== FRAME: ' + frameName + '======');
     frame = await AppdynamicsMobilesdk.startSessionFrame(frameName);
 
-    /*if(startTimer != false) {
-      print('Start Timer');
-      await AppdynamicsMobilesdk.startTimer(current["startTimer"]);
-    }
-
-    if(stopTimer != false) {
-      print('Stop Timer');
-      await AppdynamicsMobilesdk.stopTimer(current["stopTimer"]);
-      await new Future.delayed(const Duration(seconds: 10));
-    }*/
-
-    if (breadCrumb != false) {
+    if (breadCrumb != null) {
       await AppdynamicsMobilesdk.leaveBreadcrumb(breadCrumb, true);
       if (rng.nextInt(100) > 50) {
         _crashMe();
       }
     }
 
-    if (urls != false) {
-      for (var i = 0; i < urls.length; i++) {
+    if (urls.isNotEmpty) {
+      for (int i = 0; i < urls.length; i++) {
         await _makeGetRequest(urls[i]);
       }
     }
 
-    await new Future.delayed(const Duration(seconds: 2));
+    await Future<void>.delayed(const Duration(seconds: 2));
 
     await AppdynamicsMobilesdk.takeScreenshot();
 
     if (rng.nextInt(100) > 50) {
-      await AppdynamicsMobilesdk.setUserData("language", "de_DE");
-      await AppdynamicsMobilesdk.setUserData(
-          "userId", "833ED2BF-FAA4-4660-A58F-4BA1C9C953D5");
-      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", true);
+      await AppdynamicsMobilesdk.setUserData('language', 'de_DE');
+      await AppdynamicsMobilesdk.setUserData('userId', '833ED2BF-FAA4-4660-A58F-4BA1C9C953D5');
+      await AppdynamicsMobilesdk.setUserDataBoolean('hasSimplifiedEnabled', true);
     } else {
-      await AppdynamicsMobilesdk.setUserData("language", "fi_FI");
-      await AppdynamicsMobilesdk.setUserData(
-          "userId", "CCBF8FE3-20C3-48F6-822B-4FC69916B1A1");
-      await AppdynamicsMobilesdk.setUserDataBoolean("hasSimplifiedEnabled", false);
+      await AppdynamicsMobilesdk.setUserData('language', 'fi_FI');
+      await AppdynamicsMobilesdk.setUserData('userId', 'CCBF8FE3-20C3-48F6-822B-4FC69916B1A1');
+      await AppdynamicsMobilesdk.setUserDataBoolean('hasSimplifiedEnabled', false);
     }
 
-    //AppdynamicsMobilesdk.setUserDataLong("counter_long", _counter);
-    //AppdynamicsMobilesdk.setUserDataDouble("cartValue", _counter.toDouble());
-    //AppdynamicsMobilesdk.setUserDataDate("myDate", DateTime.now());
-    //AppdynamicsMobilesdk.setUserDataBoolean("isRegistered", true);
+    //AppdynamicsMobilesdk.setUserDataLong('counter_long', _counter);
+    //AppdynamicsMobilesdk.setUserDataDouble('cartValue', _counter.toDouble());
+    //AppdynamicsMobilesdk.setUserDataDate('myDate', DateTime.now());
+    //AppdynamicsMobilesdk.setUserDataBoolean('isRegistered', true);
 
     await AppdynamicsMobilesdk.reportMetric('frameCounter', frameCounter);
 
     frameCounter++;
   }
 
-  _crashMe() async {
-    var f;
+  void _crashMe() {
+    dynamic f;
     f();
-    var x = () {
-      var y = () => f();
+
+    final dynamic x = () {
+      final dynamic y = () => f();
       y();
     };
+
     x();
   }
 
-  _removeButtonPressed() async {
+  void _removeButtonPressed() {
     _crashMe();
+
     setState(() {
       _counter--;
     });
   }
 
-  _addButtonPressed() async {
+  Future<void> _addButtonPressed() async {
     await _next();
   }
 
-  Future<Response> _makeGetRequest(uri, [responseCode = -1]) async {
+  Future<Response> _makeGetRequest(String uri, [int responseCode = -1]) async {
     print('GET $uri');
     // AppDynamics specific request
-    AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(uri);
-    Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
+    final AppdynamicsHttpRequestTracker tracker = AppdynamicsMobilesdk.startRequest(uri);
+    final Map<String, String> correlationHeaders = await AppdynamicsMobilesdk.getCorrelationHeaders();
 
-    print("CH BEGIN");
+    print('CH BEGIN');
     print(correlationHeaders);
-    print("CH END");
-    print(uri + " start");
+    print('CH END');
+    print(uri + ' start');
 
     // Request goes out
-    return get(uri, headers: correlationHeaders).then((response) async {
+    return get(Uri.parse(uri), headers: correlationHeaders).then((Response response) async {
       if (responseCode <= 0) {
         responseCode = response.statusCode;
       }
@@ -221,15 +207,15 @@ class _MyAppState extends State<MyApp> {
       print(response.headers);
       */
       tracker
-          .withResponseCode(responseCode)
-          .withResponseHeaderFields(response.headers);
+        ..withResponseCode(responseCode)
+        ..withResponseHeaderFields(response.headers);
 
       if (responseCode > 500) {
         tracker.withError('An error!!!');
       }
 
       await tracker.reportDone();
-      print(uri + " end");
+      print(uri + ' end');
       return response;
     });
   }
@@ -239,30 +225,32 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         body: Center(
-          child: Image.network(
-            '$_image',
-            fit: BoxFit.cover,
-            height: double.infinity,
-            width: double.infinity,
-            alignment: Alignment.center,
-          ),
+          child: _image == ''
+              ? const Text('Wait for 10 seconds or press Refresh button to interact')
+              : Image.network(
+                  _image,
+                  fit: BoxFit.cover,
+                  height: double.infinity,
+                  width: double.infinity,
+                ),
         ),
         floatingActionButton: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              FloatingActionButton(
-                onPressed: _addButtonPressed,
-                tooltip: 'Refresh',
-                child: Icon(Icons.autorenew),
-              ),
-              FloatingActionButton(
-                onPressed: _removeButtonPressed,
-                tooltip: 'Cancel',
-                child: Icon(Icons.cancel),
-                backgroundColor: Colors.red,
-              )
-            ]),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            FloatingActionButton(
+              onPressed: _addButtonPressed,
+              tooltip: 'Refresh',
+              child: const Icon(Icons.autorenew),
+            ),
+            FloatingActionButton(
+              onPressed: _removeButtonPressed,
+              tooltip: 'Cancel',
+              backgroundColor: Colors.red,
+              child: const Icon(Icons.cancel),
+            )
+          ],
+        ),
       ),
     );
   }

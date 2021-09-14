@@ -1,0 +1,29 @@
+{
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/.g.dart": false
+  },
+  "dart.lineLength": 120,
+  "[dart]": {
+    "editor.formatOnSave": true,
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+  },
+  "[shellscript]": {
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+  },
+  "[yaml]": {
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+  },
+  "[go]": {
+    "editor.detectIndentation": false,
+    "editor.tabSize": 2
+  },
+  "dart.analysisExcludedFolders": [ "build", "release", "macos", "linux" ]
+}

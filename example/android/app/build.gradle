@@ -22,24 +22,23 @@ if (flutterVersionName == null) {
 }
 
 apply plugin: 'com.android.application'
-apply plugin: 'adeum' // this line added for AppDynamics
+apply plugin: 'kotlin-android'
 apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
 
-    lintOptions {
-        disable 'InvalidPackage'
+    sourceSets {
+        main.java.srcDirs += 'src/main/kotlin'
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.appdynamics.appdynamics_mobilesdk_example"
+        applicationId "com.example.example"
         minSdkVersion 16
-        targetSdkVersion 28
+        targetSdkVersion 30
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
@@ -56,24 +55,5 @@ flutter {
 }
 
 dependencies {
-    testImplementation 'junit:junit:4.12'
-    androidTestImplementation 'com.android.support.test:runner:1.0.2'
-    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation 'com.appdynamics:appdynamics-runtime:5.+' // this line added for AppDynamics
-}
-
-def adeum_accountname = localProperties.getProperty('appdynamics.accountname')
-def adeum_licensekey = localProperties.getProperty('appdynamics.licensekey')
-if (adeum_accountname == null) {
-    throw new GradleException("Appdynamics accountname not found. Define location with appdynamics.accountname the local.properties file.")
-}
-
-if (adeum_licensekey == null) {
-    throw new GradleException("Appdynamics licenseKey not found. Define location with appdynamics.licensekey the local.properties file.")
-}
-adeum { // this section added for AppDynamics
-    account {
-        name adeum_accountname
-        licenseKey adeum_licensekey
-    }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 }
