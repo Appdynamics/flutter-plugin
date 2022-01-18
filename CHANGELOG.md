@@ -2,7 +2,7 @@
 
 * Remove jcenter and add mavenCentral
 
-## 2.0.0
+## 2.0.0-nullsafety.1
 
 * Add null-safety
 
