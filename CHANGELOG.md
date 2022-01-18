@@ -1,3 +1,11 @@
+## 2.0.1
+
+* Remove jcenter and add mavenCentral
+
+## 2.0.0
+
+* Add null-safety
+
 ## 1.0.0
 
 * Update dependencies for flutter 2 compatibility
