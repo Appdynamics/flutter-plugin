@@ -1,4 +1,8 @@
-# AppDynamics Flutter Plugin
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
+# ⛔️ DEPRECATED: AppDynamics Flutter Plugin
+
+**This package no longer supported, please consider using [the new agent](https://github.com/Appdynamics/appdynamics_flutter_agent) instead.**
 
 Flutter plugin to utilize the AppDynamics SDK.  This plugin is a field integration and thus not an officially licensed AppDynamics product. This plugin wraps the AppDynanmics SDK and requires AppDynamics Mobile Licenses. Any issues with the plugin itself should be created on this repo.
 
